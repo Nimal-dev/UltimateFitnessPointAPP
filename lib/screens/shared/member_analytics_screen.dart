@@ -1,0 +1,250 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../../models/analytics_model.dart';
+import '../../models/member_model.dart';
+import '../../providers/owner_provider.dart';
+import '../../theme/app_theme.dart';
+import 'package:provider/provider.dart';
+
+class MemberAnalyticsScreen extends StatefulWidget {
+  final MemberModel member;
+  const MemberAnalyticsScreen({super.key, required this.member});
+
+  @override
+  State<MemberAnalyticsScreen> createState() => _MemberAnalyticsScreenState();
+}
+
+class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
+  MemberAnalytics? _analytics;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final analytics = await context.read<OwnerProvider>().fetchMemberAnalytics(widget.member.id);
+    if (mounted) {
+      setState(() {
+        _analytics = analytics;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        backgroundColor: AppTheme.cardBackground,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Member Analytics', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
+            Text(widget.member.name, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.accent)),
+          ],
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          : _analytics == null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: AppTheme.red, size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          context.read<OwnerProvider>().error ?? 'Failed to load analytics',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() => _isLoading = true);
+                            _loadData();
+                          },
+                          child: const Text('RETRY'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSummaryGrid(),
+                      const SizedBox(height: 24),
+                      _buildChartCard('Workout Completion (%)', _buildWorkoutChart()),
+                      const SizedBox(height: 16),
+                      _buildChartCard('Diet Adherence (%)', _buildDietChart()),
+                      const SizedBox(height: 16),
+                      _buildChartCard('Water Intake (Glasses)', _buildWaterChart()),
+                      const SizedBox(height: 24),
+                      _buildAttendanceSection(),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildSummaryGrid() {
+    final s = _analytics!.summary;
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.6,
+      children: [
+        _summaryCard('Attendance', '${s.attendanceDays}', '/ 30 days', AppTheme.accent),
+        _summaryCard('Avg Water', '${s.avgWater}', 'glasses/day', AppTheme.blue),
+        _summaryCard('Diet Adherence', s.avgDietAdherence != null ? '${s.avgDietAdherence}%' : 'N/A', 'last 7 days', AppTheme.emerald),
+        _summaryCard('Total Points', '${s.totalPoints}', 'career points', AppTheme.amber),
+      ],
+    );
+  }
+
+  Widget _summaryCard(String title, String value, String unit, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(title, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.textMuted, letterSpacing: 0.5)),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+              const SizedBox(width: 4),
+              Text(unit, style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartCard(String title, Widget chart) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
+          const SizedBox(height: 24),
+          SizedBox(height: 200, child: chart),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkoutChart() {
+    final spots = _analytics!.workoutTrend.asMap().entries.map((e) {
+      return FlSpot(e.key.toDouble(), e.value.completionPercent.toDouble());
+    }).toList();
+
+    return _baseLineChart(spots, AppTheme.accent);
+  }
+
+  Widget _buildDietChart() {
+    final spots = _analytics!.dietTrend.asMap().entries.map((e) {
+      return FlSpot(e.key.toDouble(), e.value.adherencePercent.toDouble());
+    }).toList();
+
+    return _baseLineChart(spots, AppTheme.emerald);
+  }
+
+  Widget _buildWaterChart() {
+    final spots = _analytics!.dietTrend.asMap().entries.map((e) {
+      return FlSpot(e.key.toDouble(), e.value.waterIntake.toDouble());
+    }).toList();
+
+    return _baseLineChart(spots, AppTheme.blue, maxY: 10);
+  }
+
+  Widget _baseLineChart(List<FlSpot> spots, Color color, {double maxY = 100}) {
+    if (spots.isEmpty) return const Center(child: Text('Not enough data', style: TextStyle(color: AppTheme.textMuted)));
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxY / 4, getDrawingHorizontalLine: (_) => FlLine(color: Colors.white10, strokeWidth: 1)),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)))),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
+            int idx = v.toInt();
+            if (idx < 0 || idx >= _analytics!.dietTrend.length) return const SizedBox();
+            final date = _analytics!.dietTrend[idx].date;
+            return Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text('${date.day}/${date.month}', style: const TextStyle(color: AppTheme.textMuted, fontSize: 9)),
+            );
+          })),
+        ),
+        borderData: FlBorderData(show: false),
+        minX: 0, maxX: (spots.length - 1).toDouble(),
+        minY: 0, maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: color,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: true, color: color.withOpacity(0.1)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Attendance (last 30 days)', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _analytics!.attendance.map((a) {
+            return Container(
+              width: 12, height: 12,
+              decoration: BoxDecoration(
+                color: a.present ? AppTheme.accent : Colors.white10,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
