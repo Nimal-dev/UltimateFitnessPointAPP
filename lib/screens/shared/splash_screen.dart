@@ -75,23 +75,11 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                 ScaleTransition(
                   scale: _scale,
                   child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accent,
-                      borderRadius: BorderRadius.circular(32),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.accent.withOpacity(0.35),
-                          blurRadius: 50,
-                          spreadRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.fitness_center_rounded,
-                      color: AppTheme.charcoal,
-                      size: 50,
+                    width: 120,
+                    height: 120,
+                    child: Image.asset(
+                      'assets/images/UG_Logo.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),

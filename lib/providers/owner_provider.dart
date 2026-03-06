@@ -111,8 +111,12 @@ class OwnerProvider extends ChangeNotifier {
     return members.where((m) {
       // tab filter
       if (tab == 'pending' && m.status != 'Pending') return false;
+      if (tab == 'expired' && m.status != 'Expired') return false;
       if (tab == 'rejected' && m.status != 'Rejected') return false;
-      if (tab == 'all' && (m.status == 'Pending' || m.status == 'Rejected')) {
+      if (tab == 'active' && m.status != 'Active') return false;
+      
+      // Default fallback for any other cases (though UI handles its own tabs)
+      if (tab == 'all' && (m.status == 'Pending' || m.status == 'Rejected' || m.status == 'Expired')) {
         return false;
       }
       // search filter
@@ -128,4 +132,7 @@ class OwnerProvider extends ChangeNotifier {
 
   int get pendingCount =>
       members.where((m) => m.status == 'Pending').length;
+
+  int get expiredCount =>
+      members.where((m) => m.status == 'Expired').length;
 }

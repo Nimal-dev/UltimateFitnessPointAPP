@@ -25,7 +25,7 @@ class _OwnerMembersScreenState extends State<OwnerMembersScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OwnerProvider>().fetchMembers();
     });
@@ -41,8 +41,9 @@ class _OwnerMembersScreenState extends State<OwnerMembersScreen>
   String get _currentTab {
     switch (_tabCtrl.index) {
       case 1: return 'pending';
-      case 2: return 'rejected';
-      default: return 'all';
+      case 2: return 'expired';
+      case 3: return 'rejected';
+      default: return 'active';
     }
   }
 
@@ -92,6 +93,19 @@ class _OwnerMembersScreenState extends State<OwnerMembersScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(color: AppTheme.red, borderRadius: BorderRadius.circular(6)),
                         child: Text('${p.pendingCount}', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white)),
+                      ),
+                    ],
+                  ]),
+                ),
+                Tab(
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Text('EXPIRED'),
+                    if (p.expiredCount > 0) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(color: AppTheme.amber, borderRadius: BorderRadius.circular(6)),
+                        child: Text('${p.expiredCount}', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white)),
                       ),
                     ],
                   ]),
@@ -304,14 +318,16 @@ class _MemberTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-      ),
+    return GestureDetector(
+      onTap: onViewStats,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -409,8 +425,9 @@ class _MemberTile extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _info(String label, String val) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Text(label, style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted, letterSpacing: 0.5)),

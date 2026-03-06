@@ -117,6 +117,62 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Update profile details (Name, Weight, Height)
+  Future<bool> updateProfile(Map<String, dynamic> updates) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final data = await ApiService.patch('/auth/profile', updates);
+      if (data['success'] == true) {
+        _user = UserModel.fromJson(data['user']);
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data['message'] ?? 'Update failed';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _error = 'Failed to update profile';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Change MPIN (requires current MPIN)
+  Future<bool> changeMpin(String currentMpin, String newMpin) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final data = await ApiService.patch('/auth/change-mpin', {
+        'currentMpin': currentMpin,
+        'newMpin': newMpin,
+      });
+      if (data['success'] == true) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data['message'] ?? 'Failed to change MPIN';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _error = 'Error changing MPIN';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');

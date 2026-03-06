@@ -1,0 +1,303 @@
+﻿Launching lib\main.dart on CPH2359 in debug mode...
+Running Gradle task 'assembleDebug'...                          
+flutter : lib/services/local_storage.dart:3:8: 
+Error: Error when reading 
+'lib/services/schema.dart': The system cannot 
+find the file specified
+At line:1 char:1
++ flutter run --no-pub > build_log.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (lib 
+   /services/lo... file specified:String) [], R  
+  emoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+import 'schema.dart';
+       ^
+lib/providers/owner_provider.dart:9:29: Error: 
+Type 'ChangeNotifier' not found.
+class OwnerProvider extends ChangeNotifier {
+                            ^^^^^^^^^^^^^^
+lib/services/local_storage.dart:23:32: Error: 
+Type 'UserCache' not found.
+  static Future<void> saveUser(UserCache user) 
+async {
+                               ^^^^^^^^^
+lib/services/local_storage.dart:29:17: Error: 
+Type 'UserCache' not found.
+  static Future<UserCache?> getUser(String 
+userId) async {
+                ^^^^^^^^^
+lib/services/local_storage.dart:34:32: Error: 
+Type 'DietCache' not found.
+  static Future<void> saveDiet(DietCache diet) 
+async {
+                               ^^^^^^^^^
+lib/services/local_storage.dart:40:17: Error: 
+Type 'DietCache' not found.
+  static Future<DietCache?> getDiet(String 
+userId) async {
+                ^^^^^^^^^
+lib/services/local_storage.dart:45:36: Error: 
+Type 'WorkoutCache' not found.
+  static Future<void> saveWorkouts(WorkoutCache 
+workout) async {
+                                   ^^^^^^^^^^^^
+lib/services/local_storage.dart:51:17: Error: 
+Type 'WorkoutCache' not found.
+  static Future<WorkoutCache?> 
+getWorkouts(String userId) async {
+                ^^^^^^^^^^^^
+lib/services/local_storage.dart:56:33: Error: 
+Type 'OwnerCache' not found.
+  static Future<void> saveOwner(OwnerCache 
+owner) async {
+                                ^^^^^^^^^^
+lib/services/local_storage.dart:62:17: Error: 
+Type 'OwnerCache' not found.
+  static Future<OwnerCache?> getOwner(String 
+userId) async {
+                ^^^^^^^^^^
+lib/services/local_storage.dart:67:35: Error: 
+Type 'PaymentCache' not found.
+  static Future<void> savePayment(PaymentCache 
+payment) async {
+                                  ^^^^^^^^^^^^
+lib/services/local_storage.dart:73:17: Error: 
+Type 'PaymentCache' not found.
+  static Future<PaymentCache?> getPayment(String 
+userId) async {
+                ^^^^^^^^^^^^
+lib/main.dart:50:9: Error: Inferred type 
+argument 'OwnerProvider' doesn't conform to the 
+bound 'ChangeNotifier?' of the type variable 'T' 
+on 'ChangeNotifierProvider'.
+ - 'OwnerProvider' is from 'package:ultimate_gym_
+app/providers/owner_provider.dart' 
+('lib/providers/owner_provider.dart').
+ - 'ChangeNotifier' is from 'package:flutter/src/
+foundation/change_notifier.dart' ('/F:/Softwares/
+Flutter/flutter_windows_3.41.4-stable/flutter/pac
+kages/flutter/lib/src/foundation/change_notifier.
+dart').
+Try specifying type arguments explicitly so that 
+they conform to the bounds.
+        ChangeNotifierProvider(create: (_) => 
+OwnerProvider()),
+        ^
+/C:/Users/nimal/AppData/Local/Pub/Cache/hosted/pu
+b.dev/provider-6.1.5+1/lib/src/change_notifier_pr
+ovider.dart: Context: This is the type variable 
+whose bound isn't conformed to.
+lib/providers/diet_provider.dart:61:37: Error: 
+The method 'DietCache' isn't defined for the 
+type 'DietProvider'.
+ - 'DietProvider' is from 'package:ultimate_gym_a
+pp/providers/diet_provider.dart' 
+('lib/providers/diet_provider.dart').
+Try correcting the name to the name of an 
+existing method, or defining a method named 
+'DietCache'.
+        await LocalStorage.saveDiet(DietCache()
+                                    ^^^^^^^^^
+lib/providers/diet_provider.dart:124:66: Error: 
+The method 'toJson' isn't defined for the type 
+'DietLogModel'.
+ - 'DietLogModel' is from 'package:ultimate_gym_a
+pp/models/diet_models.dart' 
+('lib/models/diet_models.dart').
+Try correcting the name to the name of an 
+existing method, or defining a method named 
+'toJson'.
+            cached.logJson = 
+jsonEncode(response['data'] ?? log!.toJson());
+                                                 
+                ^^^^^^
+lib/providers/owner_provider.dart:17:11: Error: 
+Superclass has no method named 'notifyListeners'.
+    super.notifyListeners();
+          ^^^^^^^^^^^^^^^
+lib/services/local_storage.dart:16:9: Error: 
+Undefined name 'PaymentCacheSchema'.
+        PaymentCacheSchema,
+        ^^^^^^^^^^^^^^^^^^
+lib/services/local_storage.dart:15:9: Error: 
+Undefined name 'OwnerCacheSchema'.
+        OwnerCacheSchema,
+        ^^^^^^^^^^^^^^^^
+lib/services/local_storage.dart:14:9: Error: 
+Undefined name 'WorkoutCacheSchema'.
+        WorkoutCacheSchema,
+        ^^^^^^^^^^^^^^^^^^
+lib/services/local_storage.dart:13:9: Error: 
+Undefined name 'DietCacheSchema'.
+        DietCacheSchema,
+        ^^^^^^^^^^^^^^^
+lib/services/local_storage.dart:12:9: Error: 
+Undefined name 'UserCacheSchema'.
+        UserCacheSchema,
+        ^^^^^^^^^^^^^^^
+lib/services/local_storage.dart:23:32: Error: 
+'UserCache' isn't a type.
+  static Future<void> saveUser(UserCache user) 
+async {
+                               ^^^^^^^^^
+lib/services/local_storage.dart:25:19: Error: 
+The getter 'userCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'userCaches'.
+      await _isar.userCaches.put(user);
+                  ^^^^^^^^^^
+lib/services/local_storage.dart:30:24: Error: 
+The getter 'userCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'userCaches'.
+    return await _isar.userCaches.filter().userId
+EqualTo(userId).findFirst();
+                       ^^^^^^^^^^
+lib/services/local_storage.dart:34:32: Error: 
+'DietCache' isn't a type.
+  static Future<void> saveDiet(DietCache diet) 
+async {
+                               ^^^^^^^^^
+lib/services/local_storage.dart:36:19: Error: 
+The getter 'dietCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'dietCaches'.
+      await _isar.dietCaches.put(diet);
+                  ^^^^^^^^^^
+lib/services/local_storage.dart:41:24: Error: 
+The getter 'dietCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'dietCaches'.
+    return await _isar.dietCaches.filter().userId
+EqualTo(userId).findFirst();
+                       ^^^^^^^^^^
+lib/services/local_storage.dart:45:36: Error: 
+'WorkoutCache' isn't a type.
+  static Future<void> saveWorkouts(WorkoutCache 
+workout) async {
+                                   ^^^^^^^^^^^^
+lib/services/local_storage.dart:47:19: Error: 
+The getter 'workoutCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'workoutCaches'.
+      await _isar.workoutCaches.put(workout);
+                  ^^^^^^^^^^^^^
+lib/services/local_storage.dart:52:24: Error: 
+The getter 'workoutCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'workoutCaches'.
+    return await _isar.workoutCaches.filter().use
+rIdEqualTo(userId).findFirst();
+                       ^^^^^^^^^^^^^
+lib/services/local_storage.dart:56:33: Error: 
+'OwnerCache' isn't a type.
+  static Future<void> saveOwner(OwnerCache 
+owner) async {
+                                ^^^^^^^^^^
+lib/services/local_storage.dart:58:19: Error: 
+The getter 'ownerCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'ownerCaches'.
+      await _isar.ownerCaches.put(owner);
+                  ^^^^^^^^^^^
+lib/services/local_storage.dart:63:24: Error: 
+The getter 'ownerCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'ownerCaches'.
+    return await _isar.ownerCaches.filter().userI
+dEqualTo(userId).findFirst();
+                       ^^^^^^^^^^^
+lib/services/local_storage.dart:67:35: Error: 
+'PaymentCache' isn't a type.
+  static Future<void> savePayment(PaymentCache 
+payment) async {
+                                  ^^^^^^^^^^^^
+lib/services/local_storage.dart:69:19: Error: 
+The getter 'paymentCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'paymentCaches'.
+      await _isar.paymentCaches.put(payment);
+                  ^^^^^^^^^^^^^
+lib/services/local_storage.dart:74:24: Error: 
+The getter 'paymentCaches' isn't defined for the 
+type 'Isar'.
+ - 'Isar' is from 'package:isar/isar.dart' ('/C:/
+Users/nimal/AppData/Local/Pub/Cache/hosted/pub.de
+v/isar-3.1.0+1/lib/isar.dart').
+Try correcting the name to the name of an 
+existing getter, or defining a getter or field 
+named 'paymentCaches'.
+    return await _isar.paymentCaches.filter().use
+rIdEqualTo(userId).findFirst();
+                       ^^^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task 
+':app:compileFlutterBuildDebug'.
+> Process 'command 'F:\Softwares\Flutter\flutter_
+windows_3.41.4-stable\flutter\bin\flutter.bat'' 
+finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack 
+trace.
+> Run with --info or --debug option to get more 
+log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 9s
+Running Gradle task 'assembleDebug'...                              9.8s
+Error: Gradle task assembleDebug failed with 
+exit code 1

@@ -74,6 +74,11 @@ class MemberProvider extends ChangeNotifier {
             membershipStatus: userData!.membershipStatus,
             membershipExpiry: userData!.membershipExpiry,
             mobile: userData!.mobile,
+            weight: userData!.weight,
+            height: userData!.height,
+            age: userData!.age,
+            gender: userData!.gender,
+            activityLevel: userData!.activityLevel,
           );
         }
         notifyListeners();

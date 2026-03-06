@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import '../../models/analytics_model.dart';
 import '../../models/member_model.dart';
 import '../../providers/owner_provider.dart';
 import '../../theme/app_theme.dart';
-import 'package:provider/provider.dart';
 
 class MemberAnalyticsScreen extends StatefulWidget {
   final MemberModel member;
@@ -82,7 +82,11 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildProfileSection(),
+                      const SizedBox(height: 24),
                       _buildSummaryGrid(),
+                      const SizedBox(height: 24),
+                      _buildHealthMetricsSection(),
                       const SizedBox(height: 24),
                       _buildChartCard('Workout Completion (%)', _buildWorkoutChart()),
                       const SizedBox(height: 16),
@@ -95,6 +99,47 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    final user = _analytics?.memberProfile;
+    if (user == null) return const SizedBox();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('PERSONAL PROFILE', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.accent, letterSpacing: 1.5)),
+          const SizedBox(height: 16),
+          _profileRow(Icons.phone_iphone_rounded, 'Mobile', user.mobile ?? widget.member.mobile),
+          const SizedBox(height: 12),
+          _profileRow(Icons.email_outlined, 'Email', user.email.isNotEmpty ? user.email : widget.member.email),
+          const SizedBox(height: 12),
+          _profileRow(Icons.calendar_month_rounded, 'Joined', widget.member.joined),
+          const SizedBox(height: 12),
+          _profileRow(Icons.verified_user_outlined, 'Status', widget.member.status.toUpperCase(), 
+            color: widget.member.status == 'Active' ? AppTheme.emerald : AppTheme.amber),
+        ],
+      ),
+    );
+  }
+
+  Widget _profileRow(IconData icon, String label, String value, {Color? color}) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppTheme.textMuted),
+        const SizedBox(width: 12),
+        Text('$label:', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+        const SizedBox(width: 8),
+        Text(value, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: color ?? Colors.white)),
+      ],
     );
   }
 
@@ -144,6 +189,124 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
     );
   }
 
+  Widget _buildHealthMetricsSection() {
+    final user = _analytics?.memberProfile;
+    if (user == null || user.weight == null || user.height == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: AppTheme.cardBackground, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.border)),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppTheme.amber, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Physical metrics (weight/height) not updated for this member.', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted))),
+          ],
+        ),
+      );
+    }
+
+    final bmi = user.bmi ?? 0;
+    final category = user.bmiCategory;
+    final color = user.bmiColor;
+    final bmr = user.bmr;
+    final tdee = user.tdee;
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: AppTheme.cardBackground, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.border)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('BODY MASS INDEX', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.textMuted, letterSpacing: 1.5)),
+                    const SizedBox(height: 4),
+                    Text(category.toUpperCase(), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+                  ]),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
+                    child: Text(bmi.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(height: 6, decoration: BoxDecoration(borderRadius: BorderRadius.circular(3), gradient: const LinearGradient(colors: [Colors.blue, Color(0xFFD4E600), Colors.orange, Colors.red]))),
+                  Align(
+                    alignment: Alignment((((bmi.clamp(15, 35) - 15) / 20) * 2) - 1, 0),
+                    child: Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppTheme.background, width: 2))),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                _bmiSmallLabel('18.5', 'Under'),
+                _bmiSmallLabel('24.9', 'Healthy'),
+                _bmiSmallLabel('29.9', 'Over'),
+              ]),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: AppTheme.cardBackground, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.border)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('PHYSICAL STATS', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.textMuted, letterSpacing: 1.5)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _statItem('Weight', '${user.weight} kg', Icons.monitor_weight_outlined),
+                  const SizedBox(width: 24),
+                  _statItem('Height', '${user.height} cm', Icons.height_rounded),
+                ],
+              ),
+              const Divider(height: 32, color: AppTheme.border),
+              Row(
+                children: [
+                  _statItem('BMR (Basal)', bmr != null ? '${bmr.round()} kcal' : 'N/A', Icons.speed_rounded, color: AppTheme.accent),
+                  const SizedBox(width: 24),
+                  _statItem('TDEE (Daily Burn)', tdee != null ? '${tdee.round()} kcal' : 'N/A', Icons.local_fire_department_rounded, color: AppTheme.red),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _bmiSmallLabel(String val, String text) => Column(children: [
+    Text(val, style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+    Text(text, style: GoogleFonts.inter(fontSize: 7, color: AppTheme.textMuted)),
+  ]);
+
+  Widget _statItem(String label, String value, IconData icon, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 12, color: AppTheme.textMuted),
+            const SizedBox(width: 4),
+            Text(label, style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w900, color: color ?? Colors.white)),
+      ],
+    );
+  }
+
   Widget _buildChartCard(String title, Widget chart) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -167,7 +330,6 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
     final spots = _analytics!.workoutTrend.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.completionPercent.toDouble());
     }).toList();
-
     return _baseLineChart(spots, AppTheme.accent);
   }
 
@@ -175,7 +337,6 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
     final spots = _analytics!.dietTrend.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.adherencePercent.toDouble());
     }).toList();
-
     return _baseLineChart(spots, AppTheme.emerald);
   }
 
@@ -183,13 +344,11 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
     final spots = _analytics!.dietTrend.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.waterIntake.toDouble());
     }).toList();
-
     return _baseLineChart(spots, AppTheme.blue, maxY: 10);
   }
 
   Widget _baseLineChart(List<FlSpot> spots, Color color, {double maxY = 100}) {
     if (spots.isEmpty) return const Center(child: Text('Not enough data', style: TextStyle(color: AppTheme.textMuted)));
-
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxY / 4, getDrawingHorizontalLine: (_) => FlLine(color: Colors.white10, strokeWidth: 1)),

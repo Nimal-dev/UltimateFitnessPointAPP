@@ -10,15 +10,32 @@ class UpiService {
     required double amount,
     required String transactionNote,
   }) async {
-    final String url = 
-      "upi://pay?pa=$gymUpiId&pn=${Uri.encodeComponent(gymName)}&am=$amount&tn=${Uri.encodeComponent(transactionNote)}&cu=INR";
+    // UPI apps expect upi://pay (with the //)
+    final Uri uri = Uri.parse(
+      'upi://pay?pa=$gymUpiId'
+      '&pn=${Uri.encodeComponent(gymName)}'
+      '&am=${amount.toStringAsFixed(2)}'
+      '&tn=${Uri.encodeComponent(transactionNote)}'
+      '&cu=INR'
+    );
 
-    final Uri uri = Uri.parse(url);
-    
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      throw 'Could not launch UPI app. Please ensure GPay or PhonePe is installed.';
+    try {
+      // On Android, externalNonBrowserApplication is the most reliable for deep links
+      final bool launched = await launchUrl(
+        uri, 
+        mode: LaunchMode.externalNonBrowserApplication
+      );
+      
+      if (!launched) {
+        throw 'No UPI apps found that can handle this payment.';
+      }
+    } catch (e) {
+      // If the above fails, try one last fallback with externalApplication
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (innerError) {
+        throw 'Could not launch UPI app. Please ensure GPay or PhonePe is installed and has UPI set up.';
+      }
     }
   }
 
@@ -27,14 +44,18 @@ class UpiService {
     required String ownerMobile,
     required String message,
   }) async {
-    // Standard WhatsApp deep link
-    final String url = "https://wa.me/$ownerMobile?text=${Uri.encodeComponent(message)}";
-    final Uri uri = Uri.parse(url);
+    // Try https first, then whatsapp:// if that fails
+    final Uri httpsUri = Uri.parse("https://wa.me/$ownerMobile?text=${Uri.encodeComponent(message)}");
+    final Uri waUri = Uri.parse("whatsapp://send?phone=$ownerMobile&text=${Uri.encodeComponent(message)}");
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      throw 'Could not open WhatsApp.';
+    try {
+      await launchUrl(httpsUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      try {
+        await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      } catch (innerError) {
+        throw 'Could not open WhatsApp. Please ensure it is installed.';
+      }
     }
   }
 }

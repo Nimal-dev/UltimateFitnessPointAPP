@@ -146,13 +146,15 @@ class _ClientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-      ),
+    return GestureDetector(
+      onTap: onViewStats,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
       child: Row(children: [
         Container(
           width: 48, height: 48,
@@ -194,6 +196,7 @@ class _ClientCard extends StatelessWidget {
           ),
         ),
       ]),
-    );
-  }
+    ),
+  );
+}
 }

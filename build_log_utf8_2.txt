@@ -1,0 +1,47 @@
+﻿Launching lib\main.dart on CPH2359 in debug mode...
+Running Gradle task 'assembleDebug'...                          
+flutter : 
+lib/providers/diet_provider.dart:61:37: Error: 
+The method 'DietCache' isn't defined for the 
+type 'DietProvider'.
+At line:1 char:1
++ flutter run --no-pub > build_log_2.txt 2>&1; 
+Get-Content build_log_2. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (lib 
+   /providers/d...'DietProvider'.:String) [], R  
+  emoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ - 'DietProvider' is from 'package:ultimate_gym_a
+pp/providers/diet_provider.dart' 
+('lib/providers/diet_provider.dart').
+Try correcting the name to the name of an 
+existing method, or defining a method named 
+'DietCache'.
+        await LocalStorage.saveDiet(DietCache()
+                                    ^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task 
+':app:compileFlutterBuildDebug'.
+> Process 'command 'F:\Softwares\Flutter\flutter_
+windows_3.41.4-stable\flutter\bin\flutter.bat'' 
+finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack 
+trace.
+> Run with --info or --debug option to get more 
+log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 8s
+Running Gradle task 'assembleDebug'...                              8.6s
+Error: Gradle task assembleDebug failed with 
+exit code 1

@@ -131,21 +131,12 @@ class _MobileStep extends StatelessWidget {
           Center(
             child: Column(children: [
               Container(
-                width: 76,
-                height: 76,
-                decoration: BoxDecoration(
-                  color: AppTheme.accent,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.accent.withValues(alpha: 0.4),
-                      blurRadius: 36,
-                      spreadRadius: 2,
-                    ),
-                  ],
+                width: 120,
+                height: 120,
+                child: Image.asset(
+                  'assets/images/UG_Logo.png',
+                  fit: BoxFit.contain,
                 ),
-                child: const Icon(Icons.fitness_center_rounded,
-                    color: AppTheme.charcoal, size: 38),
               ),
               const SizedBox(height: 18),
               RichText(

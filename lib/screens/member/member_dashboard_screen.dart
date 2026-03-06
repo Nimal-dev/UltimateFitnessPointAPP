@@ -3,8 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/user_model.dart';
 import '../../theme/app_theme.dart';
 import 'membership_renewal_screen.dart';
+import 'profile_screen.dart';
 
 class MemberDashboardScreen extends StatefulWidget {
   const MemberDashboardScreen({super.key});
@@ -27,7 +29,8 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MemberProvider>();
-    final user = context.read<AuthProvider>().user;
+    final user = context.watch<AuthProvider>().user;
+    final displayUser = provider.userData ?? user;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -63,25 +66,31 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                     ),
                     actions: [
                       Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.accent, Color(0xFFD4E600)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
+                        padding: const EdgeInsets.only(right: 8),
+                        child: IconButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ProfileScreen()),
                           ),
-                          child: Center(
-                            child: Text(
-                              user?.initials ?? '?',
-                              style: GoogleFonts.inter(
-                                color: AppTheme.charcoal,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 12,
+                          icon: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppTheme.accent, Color(0xFFD4E600)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                user?.initials ?? '?',
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.charcoal,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -130,7 +139,15 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 16),
+
+                        // BMI Analytics Section
+                        if (displayUser?.weight != null && displayUser?.height != null) ...[
+                          _BmiCard(user: displayUser!, onInfoTap: _showHealthInfoModal),
+                          const SizedBox(height: 16),
+                          _MetabolicCard(user: displayUser, onInfoTap: _showHealthInfoModal),
+                          const SizedBox(height: 28),
+                        ],
 
                         // Today's Routine
                         Row(
@@ -259,6 +276,97 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
             ),
     );
   }
+
+  void _showHealthInfoModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: AppTheme.borderMid, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 32),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('HEALTH ANALYTICS GUIDE', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
+                    const SizedBox(height: 8),
+                    Text('Understand your metrics and how to use them for your goals.', style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
+                    const Divider(height: 48, color: AppTheme.border),
+                    
+                    _infoSection('BMI (Body Mass Index)', 'A simple calculation using weight and height to determine weight category.', [
+                      'Underweight: < 18.5',
+                      'Healthy Weight: 18.5 - 24.9',
+                      'Overweight: 25 - 29.9',
+                      'Obese: > 30'
+                    ]),
+                    
+                    const SizedBox(height: 32),
+                    _infoSection('BMR (Basal Metabolic Rate)', 'The calories your body burns at exact rest just to keep you alive (organs, breathing, etc).', [
+                      'Calculated via Mifflin-St Jeor Equation.',
+                      'It is your metabolic "idle" speed.',
+                      'NEVER eat below your BMR without guidance.'
+                    ]),
+
+                    const SizedBox(height: 32),
+                    _infoSection('TDEE (Total Daily Burn)', 'The total calories you burn in a day including all your movement and physical activity.', [
+                      'TDEE = BMR × Activity Multiplier.',
+                      'To Lose Weight: Eat ~500 kcal below TDEE.',
+                      'To Maintain: Eat EXACTLY your TDEE.',
+                      'To Build Muscle: Eat 250-500 kcal above TDEE.'
+                    ]),
+                    
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('GOT IT, CHAMP!'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoSection(String title, String desc, List<String> bullets) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.accent)),
+      const SizedBox(height: 8),
+      Text(desc, style: GoogleFonts.inter(fontSize: 13, color: Colors.white70, height: 1.5)),
+      const SizedBox(height: 12),
+      ...bullets.map((b) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.arrow_forward_rounded, size: 14, color: AppTheme.accent),
+            const SizedBox(width: 8),
+            Expanded(child: Text(b, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary))),
+          ],
+        ),
+      )),
+    ],
+  );
 
   String _todayLabel() {
     final now = DateTime.now();
@@ -591,6 +699,286 @@ class _TaskItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BmiCard extends StatelessWidget {
+  final UserModel user;
+  final VoidCallback onInfoTap;
+  const _BmiCard({required this.user, required this.onInfoTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final bmi = user.bmi ?? 0;
+    final category = user.bmiCategory;
+    final color = user.bmiColor;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text('BODY MASS INDEX', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.textMuted, letterSpacing: 1.5)),
+                      const SizedBox(width: 4),
+                   const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: onInfoTap,
+                        child: const Icon(Icons.info_outline_rounded, size: 12, color: AppTheme.accent),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(category.toUpperCase(), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
+                child: Text(bmi.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          // BMI Gauge
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: const LinearGradient(
+                    colors: [Colors.blue, Color(0xFFD4E600), Colors.orange, Colors.red],
+                  ),
+                ),
+              ),
+              // Indicator
+              AnimatedAlign(
+                duration: const Duration(seconds: 1),
+                alignment: Alignment((((bmi.clamp(15, 35) - 15) / 20) * 2) - 1, 0),
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.background, width: 2),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _bmiLabel('15', 'Under'),
+              _bmiLabel('22', 'Healthy'),
+              _bmiLabel('27', 'Over'),
+              _bmiLabel('35+', 'Obese'),
+            ],
+          ),
+          const Divider(height: 48, color: AppTheme.border),
+          
+          Row(
+            children: [
+              Icon(Icons.lightbulb_outline_rounded, color: AppTheme.accent, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('IDEAL WEIGHT RANGE', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.textMuted)),
+                    const SizedBox(height: 2),
+                    Text('Based on your height, you should be ${user.idealWeightRange}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bmiLabel(String val, String cat) => Column(
+    children: [
+      Text(val, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+      Text(cat, style: GoogleFonts.inter(fontSize: 8, color: AppTheme.textMuted)),
+    ],
+  );
+}
+
+class _MetabolicCard extends StatelessWidget {
+  final UserModel user;
+  final VoidCallback onInfoTap;
+  const _MetabolicCard({required this.user, required this.onInfoTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final bmr = user.bmr;
+    final tdee = user.tdee;
+    final hasMetabolicData = bmr != null && tdee != null;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Text('METABOLIC PROFILE', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.accent, letterSpacing: 1.5)),
+                  if (hasMetabolicData) ...[
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: onInfoTap,
+                      child: const Icon(Icons.help_outline_rounded, size: 12, color: AppTheme.accent),
+                    ),
+                  ],
+                ],
+              ),
+              if (!hasMetabolicData)
+                Icon(Icons.lock_outline_rounded, size: 14, color: AppTheme.accent.withOpacity(0.5)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (hasMetabolicData) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _MetabolicStat(
+                    label: 'BMR',
+                    sub: 'Resting Calories',
+                    value: bmr.toStringAsFixed(0),
+                    icon: Icons.nightlight_round,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                Container(width: 1, height: 40, color: AppTheme.border, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                Expanded(
+                  child: _MetabolicStat(
+                    label: 'TDEE',
+                    sub: 'Daily Burn',
+                    value: tdee.toStringAsFixed(0),
+                    icon: Icons.local_fire_department_rounded,
+                    color: Colors.orangeAccent,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 40, color: AppTheme.border),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppTheme.accent.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.info_outline_rounded, color: AppTheme.accent, size: 16),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'To lose weight, aim for ${ (tdee - 500).toStringAsFixed(0) } kcal per day.',
+                    style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ] else
+            Column(
+              children: [
+                Text(
+                  'Complete your profile with Age and Gender to unlock your BMR & TDEE analytics.',
+                  style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted, height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.accent),
+                      foregroundColor: AppTheme.accent,
+                    ),
+                    child: const Text('SETUP METRICS'),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetabolicStat extends StatelessWidget {
+  final String label, sub, value;
+  final IconData icon;
+  final Color color;
+  const _MetabolicStat({required this.label, required this.sub, required this.value, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final String tooltipMsg = label == 'BMR' 
+      ? 'Calories your body burns at rest just to survive.' 
+      : 'Total calories burned including your daily activity.';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
+            const SizedBox(width: 4),
+            Tooltip(
+              message: tooltipMsg,
+              triggerMode: TooltipTriggerMode.tap,
+              showDuration: const Duration(seconds: 5),
+              preferBelow: false,
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
+                border: Border.all(color: AppTheme.accent.withOpacity(0.5)),
+              ),
+              textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              child: Icon(Icons.info_outline_rounded, size: 10, color: AppTheme.textMuted.withOpacity(0.5)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+        Text(sub, style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted)),
+      ],
     );
   }
 }

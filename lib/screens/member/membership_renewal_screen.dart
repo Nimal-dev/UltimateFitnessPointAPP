@@ -53,8 +53,8 @@ class _MembershipRenewalScreenState extends State<MembershipRenewalScreen> {
 
   Future<void> _submitRequest() async {
     final utr = _utrCtrl.text.trim();
-    if (utr.isEmpty || utr.length < 6) {
-      SnackbarUtils.showError(context, 'Please enter a valid Transaction ID (UTR)');
+    if (utr.length != 4) {
+      SnackbarUtils.showError(context, 'Please enter the last 4 digits of the Transaction ID');
       return;
     }
 
@@ -220,16 +220,18 @@ class _MembershipRenewalScreenState extends State<MembershipRenewalScreen> {
   Widget _utrSection() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text('After successful payment, copy the 12-digit UPI Ref/UTR number and paste it here:', style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 12)),
+      Text('After payment, just enter the LAST 4 DIGITS of your Transaction ID / UTR:', style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 12)),
       const SizedBox(height: 14),
       TextField(
         controller: _utrCtrl,
         keyboardType: TextInputType.number,
+        maxLength: 4,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         style: const TextStyle(color: Colors.white),
         decoration: const InputDecoration(
-          hintText: 'Enter 12-digit UTR No.',
+          hintText: 'Enter last 4 digits',
           prefixIcon: Icon(Icons.assignment_rounded, size: 20, color: AppTheme.textMuted),
+          counterStyle: TextStyle(color: AppTheme.textMuted),
         ),
       ),
     ],
@@ -259,12 +261,18 @@ class _MembershipRenewalScreenState extends State<MembershipRenewalScreen> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   UpiService.notifyOwnerViaWhatsApp(
-                    ownerMobile: "919876543210", // Placeholder
+                    ownerMobile: "918590424344", // Placeholder
                     message: "Hi Coach, I've just submitted my membership renewal payment of ₹${_selectedPlan['price'].toInt()} (Transaction ID: ${_utrCtrl.text}). Please verify it!",
                   );
                 },
                 icon: const Icon(Icons.chat_bubble_rounded),
-                label: Text('NOTIFY OWNER ON WHATSAPP', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'NOTIFY OWNER ON WHATSAPP',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w900),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),

@@ -1,4 +1,7 @@
+import 'user_model.dart';
+
 class MemberAnalytics {
+  final UserModel? memberProfile;
   final MemberSummary summary;
   final List<AttendancePoint> attendance;
   final List<DietTrendPoint> dietTrend;
@@ -7,6 +10,7 @@ class MemberAnalytics {
   final String? dietPlanNotes;
 
   MemberAnalytics({
+    this.memberProfile,
     required this.summary,
     required this.attendance,
     required this.dietTrend,
@@ -17,6 +21,7 @@ class MemberAnalytics {
 
   factory MemberAnalytics.fromJson(Map<String, dynamic> json) {
     return MemberAnalytics(
+      memberProfile: json['member'] != null ? UserModel.fromJson(json['member']) : null,
       summary: MemberSummary.fromJson(json['summary'] ?? {}),
       attendance: (json['attendance'] as List? ?? [])
           .map((i) => AttendancePoint.fromJson(i))
