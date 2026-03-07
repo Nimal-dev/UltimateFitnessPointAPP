@@ -6,6 +6,7 @@ class MemberAnalytics {
   final List<AttendancePoint> attendance;
   final List<DietTrendPoint> dietTrend;
   final List<WorkoutTrendPoint> workoutTrend;
+  final List<WeightTrendPoint> weightTrend;
   final bool hasDietPlan;
   final String? dietPlanNotes;
 
@@ -15,6 +16,7 @@ class MemberAnalytics {
     required this.attendance,
     required this.dietTrend,
     required this.workoutTrend,
+    required this.weightTrend,
     required this.hasDietPlan,
     this.dietPlanNotes,
   });
@@ -32,8 +34,25 @@ class MemberAnalytics {
       workoutTrend: (json['workoutTrend'] as List? ?? [])
           .map((i) => WorkoutTrendPoint.fromJson(i))
           .toList(),
+      weightTrend: (json['weightTrend'] as List? ?? [])
+          .map((i) => WeightTrendPoint.fromJson(i))
+          .toList(),
       hasDietPlan: json['hasDietPlan'] ?? false,
       dietPlanNotes: json['dietPlanNotes']?.toString(),
+    );
+  }
+}
+
+class WeightTrendPoint {
+  final DateTime date;
+  final double weight;
+
+  WeightTrendPoint({required this.date, required this.weight});
+
+  factory WeightTrendPoint.fromJson(Map<String, dynamic> json) {
+    return WeightTrendPoint(
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+      weight: (json['weight'] ?? 0.0).toDouble(),
     );
   }
 }

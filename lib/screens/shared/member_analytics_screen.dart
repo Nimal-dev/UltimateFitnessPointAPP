@@ -104,11 +104,13 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
                       const SizedBox(height: 24),
                       _buildHealthMetricsSection(),
                       const SizedBox(height: 24),
-                      _buildChartCard('Workout Completion (%)', _buildWorkoutChart()),
+                       _buildChartCard('Workout Completion (%)', _buildWorkoutChart()),
                       const SizedBox(height: 16),
                       _buildChartCard('Diet Adherence (%)', _buildDietChart()),
                       const SizedBox(height: 16),
                        _buildChartCard('Water Intake (Glasses)', _buildWaterChart()),
+                      const SizedBox(height: 16),
+                       _buildChartCard('Weight Progress (kg)', _buildWeightChart()),
                       const SizedBox(height: 24),
                       _buildStrengthSection(),
                       const SizedBox(height: 24),
@@ -561,36 +563,60 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
     final spots = _analytics!.workoutTrend.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.completionPercent.toDouble());
     }).toList();
-    return _baseLineChart(spots, AppTheme.accent);
+    final dates = _analytics!.workoutTrend.map((e) => e.date).toList();
+    return _baseLineChart(spots, AppTheme.accent, dates: dates);
   }
 
   Widget _buildDietChart() {
     final spots = _analytics!.dietTrend.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.adherencePercent.toDouble());
     }).toList();
-    return _baseLineChart(spots, AppTheme.emerald);
+    final dates = _analytics!.dietTrend.map((e) => e.date).toList();
+    return _baseLineChart(spots, AppTheme.emerald, dates: dates);
   }
 
   Widget _buildWaterChart() {
     final spots = _analytics!.dietTrend.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.waterIntake.toDouble());
     }).toList();
-    return _baseLineChart(spots, AppTheme.blue, maxY: 10);
+    final dates = _analytics!.dietTrend.map((e) => e.date).toList();
+    return _baseLineChart(spots, AppTheme.blue, maxY: 10, dates: dates);
   }
 
-  Widget _baseLineChart(List<FlSpot> spots, Color color, {double maxY = 100}) {
+  Widget _buildWeightChart() {
+    if (_analytics!.weightTrend.isEmpty) {
+      return const Center(child: Text('No weight logs yet', style: TextStyle(color: AppTheme.textMuted)));
+    }
+    final spots = _analytics!.weightTrend.asMap().entries.map((e) {
+      return FlSpot(e.key.toDouble(), e.value.weight.toDouble());
+    }).toList();
+    final dates = _analytics!.weightTrend.map((e) => e.date).toList();
+    final maxW = _analytics!.weightTrend.map((e) => e.weight).reduce((a, b) => a > b ? a : b);
+    final minW = _analytics!.weightTrend.map((e) => e.weight).reduce((a, b) => a < b ? a : b);
+    
+    return _baseLineChart(
+      spots, 
+      AppTheme.amber, 
+      maxY: (maxW + 10).roundToDouble(), 
+      minY: (minW - 10).clamp(0, double.infinity).roundToDouble(),
+      dates: dates
+    );
+  }
+
+  Widget _baseLineChart(List<FlSpot> spots, Color color, {double maxY = 100, double minY = 0, required List<DateTime> dates}) {
     if (spots.isEmpty) return const Center(child: Text('Not enough data', style: TextStyle(color: AppTheme.textMuted)));
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxY / 4, getDrawingHorizontalLine: (_) => FlLine(color: Colors.white10, strokeWidth: 1)),
+        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: (maxY - minY) / 4, getDrawingHorizontalLine: (_) => FlLine(color: Colors.white10, strokeWidth: 1)),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)))),
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
             int idx = v.toInt();
-            if (idx < 0 || idx >= _analytics!.dietTrend.length) return const SizedBox();
-            final date = _analytics!.dietTrend[idx].date;
+            if (idx < 0 || idx >= dates.length) return const SizedBox();
+            if (dates.length > 7 && idx % (dates.length / 5).ceil() != 0) return const SizedBox(); // Show few labels for long charts
+            final date = dates[idx];
             return Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text('${date.day}/${date.month}', style: const TextStyle(color: AppTheme.textMuted, fontSize: 9)),
@@ -599,7 +625,7 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
         ),
         borderData: FlBorderData(show: false),
         minX: 0, maxX: (spots.length - 1).toDouble(),
-        minY: 0, maxY: maxY,
+        minY: minY, maxY: maxY,
         lineBarsData: [
           LineChartBarData(
             spots: spots,
@@ -607,7 +633,7 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
             color: color,
             barWidth: 3,
             isStrokeCapRound: true,
-            dotData: const FlDotData(show: false),
+            dotData: FlDotData(show: spots.length < 10), // Show dots for fewer points
             belowBarData: BarAreaData(show: true, color: color.withOpacity(0.1)),
           ),
         ],
