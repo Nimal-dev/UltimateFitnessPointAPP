@@ -64,6 +64,43 @@ class UserModel {
     );
   }
 
+  UserModel copyWith({
+    String? name,
+    String? email,
+    String? role,
+    int? points,
+    String? membershipStatus,
+    DateTime? membershipExpiry,
+    String? mobile,
+    double? weight,
+    double? height,
+    int? age,
+    String? gender,
+    String? activityLevel,
+    double? bodyFatPercentage,
+    double? muscleMass,
+    int? dailyWaterGoal,
+  }) {
+    return UserModel(
+      id: id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      points: points ?? this.points,
+      membershipStatus: membershipStatus ?? this.membershipStatus,
+      membershipExpiry: membershipExpiry ?? this.membershipExpiry,
+      mobile: mobile ?? this.mobile,
+      weight: weight ?? this.weight,
+      height: height ?? this.height,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      activityLevel: activityLevel ?? this.activityLevel,
+      bodyFatPercentage: bodyFatPercentage ?? this.bodyFatPercentage,
+      muscleMass: muscleMass ?? this.muscleMass,
+      dailyWaterGoal: dailyWaterGoal ?? this.dailyWaterGoal,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

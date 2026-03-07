@@ -7,6 +7,7 @@ class MemberModel {
   final int points;
   final String joined;
   final String expiryDate;
+  final String role; // Member, Trainer
 
   MemberModel({
     required this.id,
@@ -17,6 +18,7 @@ class MemberModel {
     this.points = 0,
     this.joined = '',
     this.expiryDate = '',
+    this.role = 'Member',
   });
 
   factory MemberModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class MemberModel {
           ? json['createdAt'].toString().split('T')[0]
           : 'N/A',
       expiryDate: json['membershipExpiry']?.toString() ?? '',
+      role: json['role'] ?? 'Member',
     );
   }
 

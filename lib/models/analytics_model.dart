@@ -227,3 +227,108 @@ class PeakHour {
     );
   }
 }
+
+class AnnouncementModel {
+  final String id;
+  final String title;
+  final String content;
+  final String type;
+  final String target;
+  final bool isActive;
+  final DateTime createdAt;
+
+  AnnouncementModel({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.type,
+    required this.target,
+    required this.isActive,
+    required this.createdAt,
+  });
+
+  factory AnnouncementModel.fromJson(Map<String, dynamic> json) {
+    return AnnouncementModel(
+      id: json['_id'] ?? '',
+      title: json['title'] ?? '',
+      content: json['content'] ?? '',
+      type: json['type'] ?? 'Info',
+      target: json['target'] ?? 'All',
+      isActive: json['isActive'] ?? true,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    );
+  }
+}
+
+class LeaderboardEntry {
+  final String name;
+  final int points;
+  final String status;
+
+  LeaderboardEntry({
+    required this.name,
+    required this.points,
+    required this.status,
+  });
+
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) {
+    return LeaderboardEntry(
+      name: json['name'] ?? 'Member',
+      points: json['points'] ?? 0,
+      status: json['membershipStatus'] ?? 'Active',
+    );
+  }
+}
+
+class StaffWorkload {
+  final String id;
+  final String name;
+  final String role;
+  final int tasksAssigned;
+  final int dietsCreated;
+
+  StaffWorkload({
+    required this.id,
+    required this.name,
+    required this.role,
+    required this.tasksAssigned,
+    required this.dietsCreated,
+  });
+
+  factory StaffWorkload.fromJson(Map<String, dynamic> json) {
+    return StaffWorkload(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      role: json['role'] ?? 'Trainer',
+      tasksAssigned: json['tasksAssigned'] ?? 0,
+      dietsCreated: json['dietsCreated'] ?? 0,
+    );
+  }
+}
+
+class ExpiringMember {
+  final String id;
+  final String name;
+  final DateTime expiryDate;
+  final String mobile;
+
+  ExpiringMember({
+    required this.id,
+    required this.name,
+    required this.expiryDate,
+    required this.mobile,
+  });
+
+  factory ExpiringMember.fromJson(Map<String, dynamic> json) {
+    return ExpiringMember(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      expiryDate: json['membershipExpiry'] != null 
+          ? DateTime.parse(json['membershipExpiry']) 
+          : DateTime.now(),
+      mobile: json['mobile'] ?? '',
+    );
+  }
+
+  int get daysRemaining => expiryDate.difference(DateTime.now()).inDays;
+}

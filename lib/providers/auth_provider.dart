@@ -173,6 +173,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Updates the user state locally without an API call. 
+  /// Useful for syncing changes from other providers.
+  void updateLocalUser(UserModel newUser) {
+    _user = newUser;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');

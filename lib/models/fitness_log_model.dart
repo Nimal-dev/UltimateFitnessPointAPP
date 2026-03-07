@@ -31,3 +31,37 @@ class OneRepMaxLog {
     };
   }
 }
+
+class WeightLog {
+  final String id;
+  final double weight;
+  final DateTime date;
+  final String? notes;
+
+  WeightLog({
+    required this.id,
+    required this.weight,
+    required this.date,
+    this.notes,
+  });
+
+  factory WeightLog.fromJson(Map<String, dynamic> json) {
+    return WeightLog(
+      id: json['_id'] ?? json['id'] ?? '',
+      weight: (json['weight'] ?? 0.0).toDouble(),
+      date: json['date'] != null 
+          ? DateTime.parse(json['date']) 
+          : DateTime.now(),
+      notes: json['notes'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'weight': weight,
+      'date': date.toIso8601String(),
+      'notes': notes,
+    };
+  }
+}

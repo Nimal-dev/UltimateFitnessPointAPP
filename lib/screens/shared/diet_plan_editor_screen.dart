@@ -26,6 +26,7 @@ class _DietPlanEditorScreenState extends State<DietPlanEditorScreen> {
   final _notesCtrl = TextEditingController();
   final List<_MealForm> _meals = [];
   bool _isSaving = false;
+  bool _showErrors = false;
 
   @override
   void initState() {
@@ -43,13 +44,20 @@ class _DietPlanEditorScreenState extends State<DietPlanEditorScreen> {
   }
 
   Future<void> _assignPlan() async {
-    // Validate — every meal needs a time label
+    // Validate — every meal needs all required fields
+    bool hasError = false;
     for (int i = 0; i < _meals.length; i++) {
-      if (_meals[i].timeOfDay.trim().isEmpty) {
-        SnackbarUtils.showError(context,
-            'Meal ${i + 1}: please give it a name (e.g. Breakfast) before assigning!');
-        return;
+      final m = _meals[i];
+      if (m.timeOfDay.trim().isEmpty || m.time.trim().isEmpty || m.items.isEmpty) {
+        hasError = true;
+        break;
       }
+    }
+
+    if (hasError) {
+      setState(() => _showErrors = true);
+      SnackbarUtils.showError(context, 'Please fill in all required fields (highlighted in red)');
+      return;
     }
 
     setState(() => _isSaving = true);
@@ -200,6 +208,7 @@ class _DietPlanEditorScreenState extends State<DietPlanEditorScreen> {
                     canDelete: _meals.length > 1,
                     onDelete: () => _removeMeal(i),
                     onChanged: () => setState(() {}), // refresh macro bar
+                    showErrors: _showErrors,
                   ),
                 ),
                 childCount: _meals.length,
@@ -299,7 +308,7 @@ class _MacroTile extends StatelessWidget {
 class _MealCard extends StatefulWidget {
   final _MealForm form;
   final int index;
-  final bool canDelete;
+  final bool canDelete, showErrors;
   final VoidCallback onDelete, onChanged;
 
   const _MealCard({
@@ -308,6 +317,7 @@ class _MealCard extends StatefulWidget {
     required this.canDelete,
     required this.onDelete,
     required this.onChanged,
+    required this.showErrors,
   });
 
   @override
@@ -398,6 +408,7 @@ class _MealCardState extends State<_MealCard> {
             secondChild: _MealFormBody(
               form: form,
               timeSlots: _timeSlots,
+              showErrors: widget.showErrors,
               onChanged: () {
                 setState(() {});
                 widget.onChanged();
@@ -430,15 +441,16 @@ class _MealCardState extends State<_MealCard> {
       );
 }
 
-// ── Form fields inside a meal card ────────────────────────────────────────────
 class _MealFormBody extends StatelessWidget {
   final _MealForm form;
   final List<String> timeSlots;
+  final bool showErrors;
   final VoidCallback onChanged;
 
   const _MealFormBody({
     required this.form,
     required this.timeSlots,
+    required this.showErrors,
     required this.onChanged,
   });
 
@@ -462,7 +474,7 @@ class _MealFormBody extends StatelessWidget {
                   value: timeSlots.contains(form.timeOfDay) ? form.timeOfDay : null,
                   dropdownColor: const Color(0xFF111111),
                   style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
-                  decoration: _inputDec('e.g. Breakfast'),
+                  decoration: _inputDec('e.g. Breakfast', form.timeOfDay.trim().isEmpty && showErrors),
                   items: timeSlots
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
@@ -483,7 +495,7 @@ class _MealFormBody extends StatelessWidget {
                 TextFormField(
                   initialValue: form.time,
                   style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
-                  decoration: _inputDec('08:00'),
+                  decoration: _inputDec('08:00', form.time.trim().isEmpty && showErrors),
                   onChanged: (v) { form.time = v; onChanged(); },
                 ),
               ),
@@ -498,7 +510,7 @@ class _MealFormBody extends StatelessWidget {
               initialValue: form.itemsRaw,
               maxLines: 3,
               style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
-              decoration: _inputDec('Oats 50g, 2 Eggs\nBanana'),
+              decoration: _inputDec('Oats 50g, 2 Eggs\nBanana', form.items.isEmpty && showErrors),
               onChanged: (v) { form.itemsRaw = v; onChanged(); },
             ),
           ),
@@ -511,7 +523,7 @@ class _MealFormBody extends StatelessWidget {
               initialValue: form.instructions,
               maxLines: 2,
               style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
-              decoration: _inputDec('E.g. Cook oats in water, not milk...'),
+              decoration: _inputDec('E.g. Cook oats in water, not milk...', false),
               onChanged: (v) { form.instructions = v; onChanged(); },
             ),
           ),
@@ -543,23 +555,23 @@ class _MealFormBody extends StatelessWidget {
         ],
       );
 
-  InputDecoration _inputDec(String hint) => InputDecoration(
+  InputDecoration _inputDec(String hint, bool error) => InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0x1AFFFFFF)),
+          borderSide: BorderSide(color: error ? AppTheme.red : const Color(0x1AFFFFFF)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0x1AFFFFFF)),
+          borderSide: BorderSide(color: error ? AppTheme.red : const Color(0x1AFFFFFF)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.accent, width: 1.5),
+          borderSide: BorderSide(color: error ? AppTheme.red : AppTheme.accent, width: 1.5),
         ),
-        fillColor: Colors.black.withValues(alpha: 0.5),
+        fillColor: error ? AppTheme.red.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.5),
         filled: true,
       );
 }

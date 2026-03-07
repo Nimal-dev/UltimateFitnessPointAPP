@@ -19,6 +19,7 @@ import 'screens/member/member_diet_screen.dart';
 import 'screens/member/member_workouts_screen.dart';
 import 'screens/owner/owner_dashboard_screen.dart';
 import 'screens/owner/owner_members_screen.dart';
+import 'screens/owner/owner_trainers_screen.dart';
 import 'screens/trainer/trainer_dashboard_screen.dart';
 import 'screens/trainer/trainer_clients_screen.dart';
 import 'screens/shared/splash_screen.dart';
@@ -168,6 +169,7 @@ class _OwnerShellState extends State<OwnerShell> {
   static const _screens = [
     OwnerDashboardScreen(),
     OwnerMembersScreen(),
+    OwnerTrainersScreen(),
   ];
 
   @override
@@ -179,6 +181,7 @@ class _OwnerShellState extends State<OwnerShell> {
         items: const [
           BottomNavItem(icon: Icons.dashboard_rounded, label: 'Overview'),
           BottomNavItem(icon: Icons.group_rounded, label: 'Members'),
+          BottomNavItem(icon: Icons.psychology_rounded, label: 'Trainers'),
         ],
         onTap: (i) => setState(() => _idx = i),
         onLogout: () => context.read<AuthProvider>().logout(),

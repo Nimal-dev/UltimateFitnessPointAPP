@@ -7,9 +7,12 @@ import '../../providers/diet_provider.dart';
 import '../../models/user_model.dart';
 import '../../models/member_model.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/premium_tooltip.dart';
 import '../shared/member_analytics_screen.dart';
 import 'membership_renewal_screen.dart';
 import 'profile_screen.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../../models/fitness_log_model.dart';
 
 class MemberDashboardScreen extends StatefulWidget {
   const MemberDashboardScreen({super.key});
@@ -26,7 +29,9 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MemberProvider>().fetchDashboard(year: _selectedYear);
+      context.read<MemberProvider>().fetchMemberAnnouncements();
       context.read<DietProvider>().fetchDietData();
+      context.read<MemberProvider>().fetchWeightLogs();
     });
   }
 
@@ -44,10 +49,19 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
           : RefreshIndicator(
               color: AppTheme.accent,
               backgroundColor: AppTheme.cardBackground,
-              onRefresh: () => Future.wait([
-                context.read<MemberProvider>().fetchDashboard(year: _selectedYear),
-                context.read<DietProvider>().fetchDietData(),
-              ]),
+              onRefresh: () async {
+                await Future.wait([
+                  context.read<MemberProvider>().fetchDashboard(year: _selectedYear),
+                  context.read<MemberProvider>().fetchMemberAnnouncements(),
+                  context.read<DietProvider>().fetchDietData(),
+                  context.read<MemberProvider>().fetchWeightLogs(),
+                ]);
+                // Sync profile data to AuthProvider
+                final freshUser = context.read<MemberProvider>().userData;
+                if (freshUser != null && mounted) {
+                  context.read<AuthProvider>().updateLocalUser(freshUser);
+                }
+              },
               child: CustomScrollView(
                 slivers: [
                   SliverAppBar(
@@ -127,6 +141,104 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                         ),
                         const SizedBox(height: 24),
 
+                        // Phase 2: Announcements Carousel
+                        if (provider.announcements.isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "LATEST UPDATES 📢",
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 2,
+                                  color: AppTheme.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 140,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: provider.announcements.length,
+                              itemBuilder: (context, index) {
+                                final a = provider.announcements[index];
+                                return Container(
+                                  width: 240,
+                                  margin: const EdgeInsets.only(right: 14),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.cardBackground,
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(color: AppTheme.accent.withOpacity(0.1)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: (a.type == 'Alert' ? AppTheme.red : AppTheme.accent).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              a.type.toUpperCase(),
+                                              style: GoogleFonts.inter(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w900,
+                                                color: a.type == 'Alert' ? AppTheme.red : AppTheme.accent,
+                                              ),
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          PremiumTooltip(
+                                            message: 'Posted on ${_todayLabel()}',
+                                            child: Icon(Icons.info_outline_rounded, size: 14, color: AppTheme.textMuted.withOpacity(0.5)),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        a.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        a.content,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: AppTheme.textMuted,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                        ],
+
                         // Status + Points Row
                         Row(
                           children: [
@@ -202,6 +314,22 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // Weight Progress Section
+                          _WeightProgressSection(
+                            weights: provider.weightLogs,
+                            onUpdate: (val) {
+                              provider.addWeightLog(
+                                val,
+                                onSuccess: () {
+                                  if (provider.userData != null) {
+                                    context.read<AuthProvider>().updateLocalUser(provider.userData!);
+                                  }
+                                },
+                              );
+                            },
                           ),
                           const SizedBox(height: 28),
                         ],
@@ -1072,6 +1200,11 @@ class _ActivityHeatmap extends StatelessWidget {
     return AppTheme.accent;
   }
 
+  String _getMonthName(int m) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[m - 1];
+  }
+
   @override
   Widget build(BuildContext context) {
     // Build 52-week grid
@@ -1080,6 +1213,15 @@ class _ActivityHeatmap extends StatelessWidget {
     start = start.subtract(Duration(days: start.weekday % 7));
     const weeks = 53;
     final cells = <Widget>[];
+
+    // Calculate month labels positions
+    final monthLabels = <int, String>{};
+    for (int i = 0; i < weeks * 7; i++) {
+      final date = start.add(Duration(days: i));
+      if (date.day == 1 && date.year == year) {
+        monthLabels[i ~/ 7] = _getMonthName(date.month);
+      }
+    }
 
     for (int w = 0; w < weeks; w++) {
       final col = <Widget>[];
@@ -1115,11 +1257,80 @@ class _ActivityHeatmap extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          SizedBox(
+            height: 120, // Increased height for more breathing room
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: cells,
+              children: [
+                // Day Labels (Static on the left)
+                Padding(
+                  padding: const EdgeInsets.only(top: 22), // Align with grid rows (below months)
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 13), // Sunday
+                      _dayLabel('Mon'),
+                      const SizedBox(height: 13), // Tuesday
+                      _dayLabel('Wed'),
+                      const SizedBox(height: 13), // Thursday
+                      _dayLabel('Fri'),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Month Labels Row
+                        Row(
+                          children: List.generate(weeks, (w) {
+                            final hasLabel = monthLabels.containsKey(w);
+                            return Row(
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 14, // Added height
+                                  child: hasLabel
+                                      ? Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Positioned(
+                                              left: 0,
+                                              top: 0,
+                                              child: Text(
+                                                monthLabels[w]!,
+                                                softWrap: false,
+                                                overflow: TextOverflow.visible,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 8,
+                                                  color: AppTheme.textMuted,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                                if (w < weeks - 1) const SizedBox(width: 3),
+                              ],
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 8),
+                        // Grid Row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: cells,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -1145,6 +1356,268 @@ class _ActivityHeatmap extends StatelessWidget {
                   style: GoogleFonts.inter(
                       fontSize: 9, color: AppTheme.textMuted)),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dayLabel(String label) {
+    return Container(
+      height: 13, // 10 Cell + 3 Spacing
+      alignment: Alignment.centerLeft,
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 8,
+          color: AppTheme.textMuted,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+class _WeightProgressSection extends StatelessWidget {
+  final List<WeightLog> weights;
+  final Function(double) onUpdate;
+
+  const _WeightProgressSection({required this.weights, required this.onUpdate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.accent.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "WEIGHT PROGRESS",
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Track your transformation",
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () => _showUpdateDialog(context),
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, color: AppTheme.accent, size: 20),
+                ),
+              ),
+            ],
+          ),
+          if (weights.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "LATEST WEIGHT",
+                      style: GoogleFonts.inter(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          weights.last.weight.toString(),
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          "KG",
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 180,
+            child: weights.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.trending_up_rounded, color: AppTheme.textMuted.withOpacity(0.2), size: 40),
+                        const SizedBox(height: 8),
+                        Text(
+                          "No weight logs yet",
+                          style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  )
+                : LineChart(
+                    LineChartData(
+                      gridData: const FlGridData(show: false),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              if (value.toInt() < 0 || value.toInt() >= weights.length) return const SizedBox.shrink();
+                              final date = weights[value.toInt()].date;
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  "${date.day}/${date.month}",
+                                  style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              );
+                            },
+                            reservedSize: 22,
+                            interval: (weights.length / 5).clamp(1, weights.length).toDouble(),
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: weights.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.weight)).toList(),
+                          isCurved: true,
+                          color: AppTheme.accent,
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                              radius: 4,
+                              color: AppTheme.accent,
+                              strokeWidth: 2,
+                              strokeColor: AppTheme.background,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.accent.withOpacity(0.2),
+                                AppTheme.accent.withOpacity(0.0),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipColor: (_) => AppTheme.cardBackground,
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              return LineTooltipItem(
+                                "${spot.y} kg",
+                                GoogleFonts.inter(color: AppTheme.accent, fontWeight: FontWeight.w900, fontSize: 12),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpdateDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: AppTheme.accent.withOpacity(0.2))),
+        title: Text("UPDATE WEIGHT", style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white, letterSpacing: 1)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Enter your current weight in kg", style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.05),
+                hintText: "75.0",
+                hintStyle: GoogleFonts.inter(color: AppTheme.textMuted.withOpacity(0.5)),
+                prefixIcon: const Icon(Icons.scale_rounded, color: AppTheme.accent, size: 18),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.accent)),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: GoogleFonts.inter(color: AppTheme.textMuted, fontWeight: FontWeight.w800, fontSize: 12))),
+          ElevatedButton(
+            onPressed: () {
+              final val = double.tryParse(controller.text);
+              if (val != null) {
+                onUpdate(val);
+                Navigator.pop(ctx);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+            child: Text("SAVE", style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 12)),
           ),
         ],
       ),

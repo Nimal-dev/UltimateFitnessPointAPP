@@ -16,8 +16,10 @@ class ApiException implements Exception {
 class ApiService {
   // Use 10.0.2.2 for Android emulator (maps to host machine's localhost)
   // Change to your machine's LAN IP for physical devices
-  // Physical device: use laptop's LAN IP. Emulator: use 10.0.2.2
-  static const String baseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://192.168.1.109:5000/api');
+  static const String baseUrl = String.fromEnvironment(
+    'API_URL', 
+    defaultValue: 'https://ultimategym-backend.onrender.com/api'
+  );
   static const Duration _timeout = Duration(seconds: 45);
 
   static Future<String?> _getToken() async {

@@ -12,6 +12,7 @@ class MemberProvider extends ChangeNotifier {
   List<TaskModel> tasks = [];
   Map<String, int> activity = {};
   List<OneRepMaxLog> strengthLogs = [];
+  List<WeightLog> weightLogs = [];
   bool isLoading = false;
   String? error;
 
@@ -57,6 +58,51 @@ class MemberProvider extends ChangeNotifier {
       strengthLogs.remove(log);
       notifyListeners();
     }
+  }
+
+  Future<void> fetchWeightLogs() async {
+    try {
+      final data = await ApiService.get('/member/health/weight');
+      if (data['success'] == true) {
+        final List<WeightLog> logs = (data['data'] as List)
+            .map((l) => WeightLog.fromJson(l))
+            .toList();
+        // Ensure chronological order (oldest first/left)
+        logs.sort((a, b) => a.date.compareTo(b.date));
+        weightLogs = logs;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> addWeightLog(double weight, {VoidCallback? onSuccess}) async {
+    try {
+      final data = await ApiService.post('/member/health/weight', {
+        'weight': weight,
+        'date': DateTime.now().toUtc().toIso8601String(), // Send explicit UTC/ISO
+      });
+      if (data['success'] == true) {
+        // Optimistic update of local state
+        if (userData != null) {
+          userData = userData!.copyWith(weight: weight);
+        }
+        
+        // Add to history locally while waiting for full refresh
+        weightLogs.add(WeightLog(
+          id: data['data']['_id'] ?? '',
+          weight: weight,
+          date: DateTime.now(),
+        ));
+        
+        notifyListeners();
+        
+        if (onSuccess != null) onSuccess();
+        
+        // Refresh everything in background
+        await fetchWeightLogs();
+        await fetchDashboard();
+      }
+    } catch (_) {}
   }
 
   Future<void> fetchDashboard({int? year}) async {
@@ -169,5 +215,20 @@ class MemberProvider extends ChangeNotifier {
       tasks[taskIndex].isCompleted = !tasks[taskIndex].isCompleted;
       notifyListeners();
     }
+  }
+
+  // Phase 2: Announcements
+  List<AnnouncementModel> announcements = [];
+
+  Future<void> fetchMemberAnnouncements() async {
+    try {
+      final data = await ApiService.get('/member/announcements');
+      if (data['success'] == true) {
+        announcements = (data['data'] as List)
+            .map((a) => AnnouncementModel.fromJson(a))
+            .toList();
+        notifyListeners();
+      }
+    } catch (_) {}
   }
 }

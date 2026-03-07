@@ -76,6 +76,8 @@ class _OwnerMembersScreenState extends State<OwnerMembersScreen>
             ],
             bottom: TabBar(
               controller: _tabCtrl,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               onTap: (_) => setState(() {}),
               indicatorColor: AppTheme.accent,
               indicatorWeight: 2,

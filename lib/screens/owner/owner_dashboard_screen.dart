@@ -6,8 +6,10 @@ import '../../providers/payment_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/analytics_model.dart';
 import '../../models/member_model.dart';
+import '../../widgets/premium_tooltip.dart';
 import 'payment_approvals_screen.dart';
 import 'payment_history_screen.dart';
+import 'trainer_detail_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -21,10 +23,21 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<OwnerProvider>().fetchMetrics();
-      context.read<OwnerProvider>().fetchMembers();
-      context.read<PaymentProvider>().fetchPendingPayments();
+      _refreshAllData();
     });
+  }
+
+  Future<void> _refreshAllData() async {
+    final op = context.read<OwnerProvider>();
+    await Future.wait([
+      op.fetchMetrics(),
+      op.fetchMembers(),
+      op.fetchOwnerAnnouncements(),
+      op.fetchEngagementLeaderboard(),
+      op.fetchStaffStats(),
+      op.fetchExpiringMembers(),
+      context.read<PaymentProvider>().fetchPendingPayments(),
+    ]);
   }
 
   @override
@@ -36,11 +49,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       body: RefreshIndicator(
         color: AppTheme.accent,
         backgroundColor: AppTheme.cardBackground,
-        onRefresh: () async {
-          await p.fetchMetrics();
-          await p.fetchMembers();
-          if (mounted) await context.read<PaymentProvider>().fetchPendingPayments();
-        },
+        onRefresh: _refreshAllData,
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
@@ -126,16 +135,42 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   _buildRevenueChart(p.metrics.revenueProjections),
                   const SizedBox(height: 28),
 
-                  // 2. AT RISK MEMBERS (CHURN) SECTION
+                  // 2. ACTIVE ANNOUNCEMENTS (NEW PHASE 2)
+                  _buildSectionHeader('GLOBAL ANNOUNCEMENTS 📢', 
+                    tooltip: 'Broadcast messages to all gym members. Promos, closures, and events appear here.',
+                    action: IconButton(
+                      icon: const Icon(Icons.add_circle_outline_rounded, size: 20, color: AppTheme.accent),
+                      onPressed: () => _showCreateAnnouncementDialog(context),
+                    )
+                  ),
+                  const SizedBox(height: 12),
+                  _buildAnnouncementsSection(p.announcements),
+                  const SizedBox(height: 28),
+
+                  // 3. ENGAGEMENT LEADERBOARD (NEW PHASE 2)
+                  _buildSectionHeader('MEMBER LEADERBOARD 🏆', tooltip: 'Top 10 members ranked by engagement points earned through training and tasks.'),
+                  const SizedBox(height: 12),
+                  _buildLeaderboard(p.engagementLeaderboard),
+                  const SizedBox(height: 28),
+
+                  // 4. AT RISK MEMBERS (CHURN) SECTION
                   _buildSectionHeader('CHURN RISK ZONE ⚠️', tooltip: 'Active members who haven\'t checked in for 10 or more days. Reaching out helps retention!'),
                   const SizedBox(height: 12),
                   _buildRiskZone(p.metrics.atRiskMembers),
                   const SizedBox(height: 28),
 
-                  // 3. PEAK HOUR HEATMAP SECTION
+                  // 5. PEAK HOUR HEATMAP SECTION
                   _buildSectionHeader('PEAK HOUR INSIGHTS 🔥', tooltip: 'Occupancy trends based on check-ins over the last 30 days to help with staffing'),
                   const SizedBox(height: 12),
                   _buildPeakHourHeatmap(p.metrics.peakHours),
+                  const SizedBox(height: 28),
+
+                  // 6. OPERATIONS & STAFFING (NEW PHASE 3)
+                  _buildSectionHeader('OPERATIONS & STAFFING 🛡️', tooltip: 'Monitor trainer activity and prevent membership churn with renewal reminders.'),
+                  const SizedBox(height: 12),
+                  _buildStaffWorkload(p.staffWorkload),
+                  const SizedBox(height: 16),
+                  _buildExpiringWatchlist(p.expiringMembers),
                   const SizedBox(height: 28),
 
                   // Pending Renewals Section
@@ -144,32 +179,41 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   _buildPendingRenewals(context),
                   const SizedBox(height: 20),
 
-                  // Recent Members Section
-                  _buildSectionHeader('RECENT MEMBERS', tooltip: 'The most recently registered members in your gym'),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.border),
-                    ),
-                    child: p.isLoading
-                        ? const Padding(
-                            padding: EdgeInsets.all(40),
-                            child: Center(child: CircularProgressIndicator(color: AppTheme.accent)),
-                          )
-                        : Column(
+                  // Recent Members Section (Expanded Phase 4 Tabs)
+                  DefaultTabController(
+                    length: 3,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildSectionHeader('DIRECTORY & STAFF', tooltip: 'All registered users in your gym community.'),
+                        const SizedBox(height: 12),
+                        TabBar(
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
+                          dividerColor: Colors.transparent,
+                          indicatorColor: AppTheme.accent,
+                          labelColor: AppTheme.accent,
+                          unselectedLabelColor: AppTheme.textMuted,
+                          labelStyle: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                          tabs: const [
+                            Tab(text: 'ALL'),
+                            Tab(text: 'MEMBERS'),
+                            Tab(text: 'TRAINERS'),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 350, // Fixed height for list area
+                          child: TabBarView(
                             children: [
-                              ...p.members.take(5).map((m) => _MemberRow(member: m)).toList(),
-                              if (p.members.isEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.all(32),
-                                  child: Center(
-                                    child: Text('No members yet', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
-                                  ),
-                                ),
+                              _buildUserList(p, 'all'),
+                              _buildUserList(p, 'Member'),
+                              _buildUserList(p, 'Trainer'),
                             ],
                           ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
                 ]),
@@ -181,7 +225,37 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, {String? tooltip}) {
+  Widget _buildUserList(OwnerProvider p, String roleFilter) {
+    var list = p.members;
+    if (roleFilter != 'all') {
+      list = list.where((m) => m.role == roleFilter).toList();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: p.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          : list.isEmpty
+              ? Center(child: Text('No entries found', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)))
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: list.length,
+                  separatorBuilder: (_, __) => Divider(color: AppTheme.border.withOpacity(0.5), height: 1, indent: 60),
+                  itemBuilder: (context, index) => _MemberRow(
+                    member: list[index],
+                    staffWorkload: list[index].role == 'Trainer' 
+                      ? p.staffWorkload.firstWhere((s) => s.id == list[index].id, orElse: () => StaffWorkload(id: '', name: '', role: '', tasksAssigned: 0, dietsCreated: 0)) 
+                      : null,
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {String? tooltip, Widget? action}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -202,7 +276,176 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             ],
           ],
         ),
+        if (action != null) action,
       ],
+    );
+  }
+
+  Widget _buildAnnouncementsSection(List<AnnouncementModel> announcements) {
+    if (announcements.isEmpty) return _emptyPlaceholder('No active announcements. Create one to notify members!');
+    return SizedBox(
+      height: 130,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: announcements.length,
+        itemBuilder: (context, index) {
+          final a = announcements[index];
+          return PremiumTooltip(
+            message: 'Target: ${a.target}\nStatus: ${a.isActive ? 'Live' : 'Hidden'}',
+            child: Container(
+              width: 200,
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: a.isActive ? AppTheme.accent.withOpacity(0.2) : AppTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: AppTheme.accent.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                        child: Text(a.type.toUpperCase(), style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: AppTheme.accent)),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => context.read<OwnerProvider>().deleteAnnouncement(a.id),
+                        child: const Icon(Icons.delete_outline_rounded, size: 14, color: AppTheme.red),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text(a.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLeaderboard(List<LeaderboardEntry> leaderboard) {
+    if (leaderboard.isEmpty) return _emptyPlaceholder('Members need to earn points to appear here!');
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        children: List.generate(leaderboard.length, (i) {
+          final entry = leaderboard[i];
+          final isTop3 = i < 3;
+          return Column(
+            children: [
+              ListTile(
+                dense: true,
+                leading: Container(
+                  width: 24,
+                  alignment: Alignment.center,
+                  child: isTop3 
+                    ? Icon([Icons.workspace_premium_rounded, Icons.emoji_events_rounded, Icons.military_tech_rounded][i], 
+                        size: 18, color: [const Color(0xFFFFD700), const Color(0xFFC0C0C0), const Color(0xFFCD7F32)][i])
+                    : Text('${i + 1}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                ),
+                title: Text(entry.name, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                trailing: PremiumTooltip(
+                  message: 'Total points earned from activities',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${entry.points}', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.accent)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.bolt_rounded, size: 14, color: AppTheme.accent),
+                    ],
+                  ),
+                ),
+              ),
+              if (i < leaderboard.length - 1) Divider(color: AppTheme.border.withOpacity(0.5), height: 1, indent: 50),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  void _showCreateAnnouncementDialog(BuildContext context) {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
+    String selectedType = 'Info';
+    String selectedTarget = 'All';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.cardBackground,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppTheme.border)),
+          title: Text('New Announcement 📢', style: GoogleFonts.inter(fontWeight: FontWeight.w900, color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Title',
+                    labelStyle: const TextStyle(color: AppTheme.textMuted),
+                    hintText: 'e.g. Holiday Closure',
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppTheme.border)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: contentController,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Content',
+                    labelStyle: const TextStyle(color: AppTheme.textMuted),
+                    hintText: 'Describe your update...',
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppTheme.border)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  dropdownColor: AppTheme.cardBackground,
+                  value: selectedType,
+                  items: ['Info', 'Alert', 'Promo', 'Event'].map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Colors.white)))).toList(),
+                  onChanged: (v) => setDialogState(() => selectedType = v!),
+                  decoration: const InputDecoration(labelText: 'Type', labelStyle: TextStyle(color: AppTheme.textMuted)),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL', style: TextStyle(color: AppTheme.textMuted))),
+            ElevatedButton(
+              onPressed: () {
+                if (titleController.text.isNotEmpty && contentController.text.isNotEmpty) {
+                  context.read<OwnerProvider>().createAnnouncement({
+                    'title': titleController.text,
+                    'content': contentController.text,
+                    'type': selectedType,
+                    'target': selectedTarget,
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
+              child: const Text('BROADCAST', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -389,38 +632,103 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       ),
     );
   }
-}
 
-class PremiumTooltip extends StatelessWidget {
-  final String message;
-  final Widget child;
+  Widget _buildStaffWorkload(List<StaffWorkload> data) {
+    if (data.isEmpty) return _emptyPlaceholder('No staff data available');
+    return SizedBox(
+      height: 110,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: data.length,
+        itemBuilder: (context, index) {
+          final s = data[index];
+          return Container(
+            width: 160,
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBackground,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(s.role, style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted)),
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _activityBadge(Icons.assignment_rounded, s.tasksAssigned, 'Tasks', AppTheme.blue),
+                    _activityBadge(Icons.restaurant_rounded, s.dietsCreated, 'Diets', AppTheme.green),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-  const PremiumTooltip({super.key, required this.message, required this.child});
+  Widget _activityBadge(IconData icon, int count, String label, Color color) {
+    return PremiumTooltip(
+      message: '$count $label assigned/created',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+        child: Row(
+          children: [
+            Icon(icon, size: 10, color: color),
+            const SizedBox(width: 4),
+            Text('$count', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: message,
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.all(12),
-      showDuration: const Duration(seconds: 4),
-      waitDuration: const Duration(milliseconds: 200),
-      triggerMode: TooltipTriggerMode.tap,
+  Widget _buildExpiringWatchlist(List<ExpiringMember> members) {
+    if (members.isEmpty) return _emptyPlaceholder('No memberships expiring in the next 7 days.');
+    return Container(
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.accent.withOpacity(0.3), width: 1),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border),
       ),
-      textStyle: GoogleFonts.inter(
-        fontSize: 11,
-        color: Colors.white,
-        fontWeight: FontWeight.w500,
-        height: 1.4,
+      child: Column(
+        children: members.map((m) => ListTile(
+          dense: true,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: AppTheme.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.timer_rounded, color: AppTheme.red, size: 18),
+          ),
+          title: Text(m.name, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+          subtitle: Text('Expires in ${m.daysRemaining} days', style: GoogleFonts.inter(fontSize: 11, color: AppTheme.red)),
+          trailing: PremiumTooltip(
+            message: 'Send a renewal reminder to ${m.name}',
+            child: ElevatedButton(
+              onPressed: () async {
+                final success = await context.read<OwnerProvider>().sendRenewalReminder(m.id);
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Reminder sent to ${m.name}! 📲'), backgroundColor: AppTheme.green),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accent,
+                minimumSize: const Size(60, 28),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text('REMIND', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black)),
+            ),
+          ),
+        )).toList(),
       ),
-      child: child,
     );
   }
 }
@@ -511,7 +819,8 @@ class _MetricCard extends StatelessWidget {
 
 class _MemberRow extends StatelessWidget {
   final MemberModel member;
-  const _MemberRow({required this.member});
+  final StaffWorkload? staffWorkload;
+  const _MemberRow({required this.member, this.staffWorkload});
 
   Color _statusColor(String s) {
     if (s == 'Active') return AppTheme.green;
@@ -520,34 +829,65 @@ class _MemberRow extends StatelessWidget {
     return AppTheme.textMuted;
   }
 
-  String _statusTooltip(String s) {
-    if (s == 'Active') return 'Member has an active membership';
-    if (s == 'Pending') return 'Member registration or renewal is pending approval';
-    if (s == 'Expired') return 'Membership has expired and needs renewal';
-    return 'Status: $s';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isTrainer = member.role == 'Trainer';
+
     return ListTile(
+      onTap: isTrainer 
+        ? () => _openTrainerDetails(context) 
+        : null, // Members already have their own analytics screen handled elsewhere or by owner clicks in members tab
       leading: CircleAvatar(
         radius: 18,
-        backgroundColor: AppTheme.accent.withOpacity(0.1),
-        child: Text(member.name.substring(0, 1).toUpperCase(), style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.bold)),
+        backgroundColor: (isTrainer ? AppTheme.blue : AppTheme.accent).withOpacity(0.1),
+        child: Text(member.name.substring(0, 1).toUpperCase(), 
+          style: TextStyle(color: isTrainer ? AppTheme.blue : AppTheme.accent, fontWeight: FontWeight.bold)),
       ),
-      title: Text(member.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-      subtitle: Text(member.mobile, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
-      trailing: PremiumTooltip(
-        message: _statusTooltip(member.status),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: _statusColor(member.status).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+      title: Text(member.name, 
+        maxLines: 1, 
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+      subtitle: Text(isTrainer ? 'Professional Trainer' : member.mobile, 
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+      trailing: isTrainer && staffWorkload != null
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _miniBadge(Icons.assignment_rounded, staffWorkload!.tasksAssigned, AppTheme.blue),
+              const SizedBox(width: 6),
+              _miniBadge(Icons.restaurant_rounded, staffWorkload!.dietsCreated, AppTheme.green),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted, size: 16),
+            ],
+          )
+        : Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _statusColor(member.status).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(member.status.toUpperCase(), style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w900, color: _statusColor(member.status))),
           ),
-          child: Text(member.status.toUpperCase(), style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w900, color: _statusColor(member.status))),
-        ),
+    );
+  }
+
+  Widget _miniBadge(IconData icon, int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      child: Row(
+        children: [
+          Icon(icon, size: 8, color: color),
+          const SizedBox(width: 2),
+          Text('$count', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
+  }
+
+  void _openTrainerDetails(BuildContext context) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => TrainerDetailScreen(trainer: member)));
   }
 }

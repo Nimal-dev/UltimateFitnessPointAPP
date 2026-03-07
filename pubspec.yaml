@@ -1,5 +1,5 @@
-name: ultimate_gym_app
-description: Ultimate Gym mobile app - dashboard for Members, Trainers, and Owners.
+name: ultimate_fitness
+description: Ultimate Fitness mobile app - Your comprehensive fitness companion.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -22,9 +22,24 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/UltimateApp_logo.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#0B0F19"
+  image: assets/images/UltimateApp_logo.png
+  android_12:
+    image: assets/images/UltimateApp_logo.png
+    color: "#0B0F19"
+  fullscreen: true
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - assets/images/UG_Logo.png
+    - assets/images/UltimateApp_logo.png
