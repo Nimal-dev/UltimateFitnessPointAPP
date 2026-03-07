@@ -6,6 +6,7 @@ class MemberModel {
   final String status; // Active, Pending, Expired, Rejected
   final int points;
   final String joined;
+  final String expiryDate;
 
   MemberModel({
     required this.id,
@@ -15,6 +16,7 @@ class MemberModel {
     this.status = 'Pending',
     this.points = 0,
     this.joined = '',
+    this.expiryDate = '',
   });
 
   factory MemberModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class MemberModel {
       joined: json['createdAt'] != null
           ? json['createdAt'].toString().split('T')[0]
           : 'N/A',
+      expiryDate: json['membershipExpiry']?.toString() ?? '',
     );
   }
 
@@ -37,8 +40,14 @@ class MemberModel {
   }
 
   int get daysRemaining {
-    // Parsed from expiry if available
-    return 0;
+    if (expiryDate.isEmpty) return 0;
+    try {
+      final expiry = DateTime.parse(expiryDate);
+      final diff = expiry.difference(DateTime.now()).inDays;
+      return diff < 0 ? 0 : diff + 1; // +1 to include today
+    } catch (_) {
+      return 0;
+    }
   }
 }
 

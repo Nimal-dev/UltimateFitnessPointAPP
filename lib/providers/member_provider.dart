@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../services/api_service.dart';
@@ -11,32 +13,61 @@ class MemberProvider extends ChangeNotifier {
   String? error;
 
   Future<void> fetchDashboard({int? year}) async {
-    isLoading = true;
+    final y = year ?? DateTime.now().year;
+    final cacheKey = 'cached_dashboard_$y';
+    
     error = null;
-    notifyListeners();
+    
+    // 1. Try to load from cache first for instant UI
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedData = prefs.getString(cacheKey);
+      if (cachedData != null) {
+        final data = jsonDecode(cachedData);
+        _parseDashboardData(data);
+        notifyListeners();
+      }
+    } catch (_) {
+      // Ignore cache errors
+    }
+
+    // 2. Fetch fresh data from API
+    if (userData == null) {
+      isLoading = true;
+      notifyListeners();
+    }
 
     try {
-      final y = year ?? DateTime.now().year;
       final data = await ApiService.get('/member/dashboard?year=$y');
       if (data['success'] == true) {
-        userData = UserModel.fromJson(data['user']);
-        tasks = (data['tasks'] as List<dynamic>? ?? [])
-            .map((t) => TaskModel.fromJson(t))
-            .toList();
-        activity = Map<String, int>.from(
-          (data['activity'] as Map<String, dynamic>? ?? {}).map(
-            (k, v) => MapEntry(k, (v as num).toInt()),
-          ),
-        );
+        _parseDashboardData(data);
+        
+        // Save to cache
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(cacheKey, jsonEncode(data));
       } else {
         error = data['message'];
       }
     } catch (e) {
-      error = 'Failed to load dashboard';
+      if (userData == null) {
+        error = 'Failed to load dashboard';
+      }
     }
 
     isLoading = false;
     notifyListeners();
+  }
+
+  void _parseDashboardData(Map<String, dynamic> data) {
+    userData = UserModel.fromJson(data['user']);
+    tasks = (data['tasks'] as List<dynamic>? ?? [])
+        .map((t) => TaskModel.fromJson(t))
+        .toList();
+    activity = Map<String, int>.from(
+      (data['activity'] as Map<String, dynamic>? ?? {}).map(
+        (k, v) => MapEntry(k, (v as num).toInt()),
+      ),
+    );
   }
 
   Future<void> toggleTask(String taskId) async {

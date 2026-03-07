@@ -17,8 +17,8 @@ class ApiService {
   // Use 10.0.2.2 for Android emulator (maps to host machine's localhost)
   // Change to your machine's LAN IP for physical devices
   // Physical device: use laptop's LAN IP. Emulator: use 10.0.2.2
-  static const String baseUrl = 'http://192.168.1.110:5000/api';
-  static const Duration _timeout = Duration(seconds: 15);
+  static const String baseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://192.168.1.109:5000/api');
+  static const Duration _timeout = Duration(seconds: 45);
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -33,60 +33,67 @@ class ApiService {
     };
   }
 
+  static Future<void> ping() async {
+    try {
+      await http.get(Uri.parse('$baseUrl/health')).timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Periodic ping - ignore failures
+    }
+  }
+
+  static Future<Map<String, dynamic>> _requestWithRetry(Future<http.Response> Function() request) async {
+    try {
+      final response = await request().timeout(_timeout);
+      return _handle(response);
+    } on SocketException {
+      // Retry once after 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final response = await request().timeout(_timeout);
+        return _handle(response);
+      } catch (e) {
+        throw ApiException('No internet connection. Check your network and try again.');
+      }
+    } on TimeoutException {
+      // Retry once after 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final response = await request().timeout(_timeout);
+        return _handle(response);
+      } catch (e) {
+        throw ApiException('Request timed out. The server took too long to respond.');
+      }
+    }
+  }
+
   static Future<Map<String, dynamic>> get(String path) async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$path'), headers: await _headers())
-          .timeout(_timeout);
-      return _handle(response);
-    } on SocketException {
-      throw ApiException('No internet connection. Check your network and try again.');
-    } on TimeoutException {
-      throw ApiException('Request timed out. The server took too long to respond.');
-    }
+    return _requestWithRetry(() async => http.get(
+      Uri.parse('$baseUrl$path'), 
+      headers: await _headers()
+    ));
   }
 
-  static Future<Map<String, dynamic>> post(
-      String path, Map<String, dynamic> body) async {
-    try {
-      final response = await http
-          .post(Uri.parse('$baseUrl$path'),
-              headers: await _headers(), body: jsonEncode(body))
-          .timeout(_timeout);
-      return _handle(response);
-    } on SocketException {
-      throw ApiException('No internet connection. Check your network and try again.');
-    } on TimeoutException {
-      throw ApiException('Request timed out. The server took too long to respond.');
-    }
+  static Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
+    return _requestWithRetry(() async => http.post(
+      Uri.parse('$baseUrl$path'),
+      headers: await _headers(), 
+      body: jsonEncode(body)
+    ));
   }
 
-  static Future<Map<String, dynamic>> patch(
-      String path, Map<String, dynamic> body) async {
-    try {
-      final response = await http
-          .patch(Uri.parse('$baseUrl$path'),
-              headers: await _headers(), body: jsonEncode(body))
-          .timeout(_timeout);
-      return _handle(response);
-    } on SocketException {
-      throw ApiException('No internet connection. Check your network and try again.');
-    } on TimeoutException {
-      throw ApiException('Request timed out. The server took too long to respond.');
-    }
+  static Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) async {
+    return _requestWithRetry(() async => http.patch(
+      Uri.parse('$baseUrl$path'),
+      headers: await _headers(), 
+      body: jsonEncode(body)
+    ));
   }
 
   static Future<Map<String, dynamic>> delete(String path) async {
-    try {
-      final response = await http
-          .delete(Uri.parse('$baseUrl$path'), headers: await _headers())
-          .timeout(_timeout);
-      return _handle(response);
-    } on SocketException {
-      throw ApiException('No internet connection. Check your network and try again.');
-    } on TimeoutException {
-      throw ApiException('Request timed out. The server took too long to respond.');
-    }
+    return _requestWithRetry(() async => http.delete(
+      Uri.parse('$baseUrl$path'), 
+      headers: await _headers()
+    ));
   }
 
   static Map<String, dynamic> _handle(http.Response response) {

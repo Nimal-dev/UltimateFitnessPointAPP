@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'providers/member_provider.dart';
 import 'providers/diet_provider.dart';
 import 'providers/payment_provider.dart';
 import 'providers/owner_provider.dart';
+import 'services/api_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/shared/force_mpin_reset_screen.dart';
@@ -23,6 +25,10 @@ import 'screens/shared/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Start 14-minute self-ping to keep Render free tier alive
+  Timer.periodic(const Duration(minutes: 14), (_) => ApiService.ping());
+  
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
