@@ -14,6 +14,9 @@ class UserModel {
   final int? age;
   final String? gender;
   final String? activityLevel;
+  final double? bodyFatPercentage;
+  final double? muscleMass;
+  final int dailyWaterGoal;
 
   UserModel({
     required this.id,
@@ -29,6 +32,9 @@ class UserModel {
     this.age,
     this.gender,
     this.activityLevel,
+    this.bodyFatPercentage,
+    this.muscleMass,
+    this.dailyWaterGoal = 8,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -48,7 +54,35 @@ class UserModel {
       age: json['age'],
       gender: json['gender'],
       activityLevel: json['activityLevel'] ?? 'Sedentary',
+      bodyFatPercentage: json['bodyFatPercentage'] != null
+          ? (json['bodyFatPercentage'] as num).toDouble()
+          : null,
+      muscleMass: json['muscleMass'] != null
+          ? (json['muscleMass'] as num).toDouble()
+          : null,
+      dailyWaterGoal: (json['dailyWaterGoal'] ?? 8) as int,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'role': role,
+      'points': points,
+      'membershipStatus': membershipStatus,
+      'membershipExpiry': membershipExpiry?.toIso8601String(),
+      'mobile': mobile,
+      'weight': weight,
+      'height': height,
+      'age': age,
+      'gender': gender,
+      'activityLevel': activityLevel,
+      'bodyFatPercentage': bodyFatPercentage,
+      'muscleMass': muscleMass,
+      'dailyWaterGoal': dailyWaterGoal,
+    };
   }
 
   String get initials {

@@ -5,7 +5,12 @@ import 'package:provider/provider.dart';
 import '../../models/analytics_model.dart';
 import '../../models/member_model.dart';
 import '../../providers/owner_provider.dart';
+import '../../providers/member_provider.dart';
+import '../../models/fitness_log_model.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/strength_log_dialog.dart';
+
+import '../../providers/auth_provider.dart';
 
 class MemberAnalyticsScreen extends StatefulWidget {
   final MemberModel member;
@@ -26,7 +31,18 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
   }
 
   Future<void> _loadData() async {
-    final analytics = await context.read<OwnerProvider>().fetchMemberAnalytics(widget.member.id);
+    final auth = context.read<AuthProvider>();
+    final isOwner = auth.user?.role == 'Owner' || auth.user?.role == 'Trainer';
+    
+    MemberAnalytics? analytics;
+    
+    if (isOwner) {
+      analytics = await context.read<OwnerProvider>().fetchMemberAnalytics(widget.member.id);
+    } else {
+      analytics = await context.read<MemberProvider>().fetchAnalytics();
+      await context.read<MemberProvider>().fetchStrengthLogs();
+    }
+    
     if (mounted) {
       setState(() {
         _analytics = analytics;
@@ -92,14 +108,229 @@ class _MemberAnalyticsScreenState extends State<MemberAnalyticsScreen> {
                       const SizedBox(height: 16),
                       _buildChartCard('Diet Adherence (%)', _buildDietChart()),
                       const SizedBox(height: 16),
-                      _buildChartCard('Water Intake (Glasses)', _buildWaterChart()),
+                       _buildChartCard('Water Intake (Glasses)', _buildWaterChart()),
+                      const SizedBox(height: 24),
+                      _buildStrengthSection(),
                       const SizedBox(height: 24),
                       _buildAttendanceSection(),
                       const SizedBox(height: 32),
                     ],
                   ),
                 ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showStrengthDialog,
+        backgroundColor: AppTheme.accent,
+        child: const Icon(Icons.fitness_center_rounded, color: Colors.black),
+      ),
     );
+  }
+
+  void _showStrengthDialog() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => const StrengthLogDialog(),
+    );
+
+    if (result != null && mounted) {
+      final newLog = OneRepMaxLog(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        exerciseName: result['exercise'],
+        weight: result['weight'],
+        date: DateTime.now(),
+      );
+      context.read<MemberProvider>().addStrengthLog(newLog);
+    }
+  }
+
+  Widget _buildStrengthSection() {
+    return Consumer<MemberProvider>(
+      builder: (context, provider, child) {
+        final logs = provider.strengthLogs;
+        if (logs.isEmpty) {
+          return _buildEmptyStrengthState();
+        }
+
+        // Group logs by exercise name
+        final Map<String, List<OneRepMaxLog>> groupedLogs = {};
+        for (var log in logs) {
+          groupedLogs.putIfAbsent(log.exerciseName, () => []).add(log);
+        }
+
+        // Sort each group by date (newest first)
+        for (var exercise in groupedLogs.keys) {
+          groupedLogs[exercise]!.sort((a, b) => b.date.compareTo(a.date));
+        }
+
+        final exerciseNames = groupedLogs.keys.toList()..sort();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('STRENGTH PROGRESS (1RM)',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
+            const SizedBox(height: 16),
+            ...exerciseNames.map((name) => _buildExerciseMasterCard(name, groupedLogs[name]!)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyStrengthState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('STRENGTH PROGRESS (1RM)',
+            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppTheme.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Center(
+            child: Text(
+              'No strength logs yet',
+              style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExerciseMasterCard(String name, List<OneRepMaxLog> history) {
+    final lastLog = history.first;
+    final prevLog = history.length > 1 ? history[1] : null;
+    final diff = prevLog != null ? lastLog.weight - prevLog.weight : 0.0;
+    final maxWeight = history.map((e) => e.weight).reduce((a, b) => a > b ? a : b);
+    final isNewPR = lastLog.weight >= maxWeight;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isNewPR ? AppTheme.accent.withOpacity(0.3) : AppTheme.border),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isNewPR ? AppTheme.accent.withOpacity(0.1) : Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.fitness_center_rounded,
+                  size: 16,
+                  color: isNewPR ? AppTheme.accent : AppTheme.textMuted,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name.toUpperCase(),
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)),
+                    if (isNewPR)
+                      Text('PERSONAL RECORD',
+                          style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w900, color: AppTheme.accent)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 8, left: 36),
+            child: Row(
+              children: [
+                Text('${lastLog.weight}',
+                    style: GoogleFonts.inter(
+                        fontSize: 22, fontWeight: FontWeight.w900, color: isNewPR ? AppTheme.accent : Colors.white)),
+                const SizedBox(width: 4),
+                Text('kg',
+                    style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.bold)),
+                if (diff != 0) ...[
+                  const SizedBox(width: 12),
+                  Icon(
+                    diff > 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                    size: 14,
+                    color: diff > 0 ? AppTheme.emerald : AppTheme.red,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${diff > 0 ? '+' : ''}${diff.toStringAsFixed(1)} kg',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: diff > 0 ? AppTheme.emerald : AppTheme.red,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            const Divider(color: AppTheme.border, height: 24),
+            ...history.map((h) => _buildHistoryRow(h, h == history.first)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryRow(OneRepMaxLog log, bool isLatest) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: isLatest ? AppTheme.accent : AppTheme.textMuted.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${log.date.day} ${_getMonthName(log.date.month)} ${log.date.year}',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: isLatest ? Colors.white : Colors.white60,
+                  fontWeight: isLatest ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '${log.weight} kg',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: isLatest ? AppTheme.accent : Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
   }
 
   Widget _buildProfileSection() {

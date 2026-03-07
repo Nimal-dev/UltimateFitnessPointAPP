@@ -51,28 +51,4 @@ class MemberModel {
   }
 }
 
-class OwnerMetrics {
-  final int totalMembers;
-  final int activeMembers;
-  final int pendingRenewals;
-  final int expiredMembers;
-  final int dailyCheckins;
 
-  OwnerMetrics({
-    this.totalMembers = 0,
-    this.activeMembers = 0,
-    this.pendingRenewals = 0,
-    this.expiredMembers = 0,
-    this.dailyCheckins = 0,
-  });
-
-  factory OwnerMetrics.fromJson(Map<String, dynamic> json) {
-    return OwnerMetrics(
-      totalMembers: (json['totalMembers'] ?? 0) as int,
-      activeMembers: (json['activeMembers'] ?? 0) as int,
-      pendingRenewals: (json['pendingRenewals'] ?? 0) as int,
-      expiredMembers: (json['expiredMembers'] ?? 0) as int,
-      dailyCheckins: (json['dailyCheckins'] ?? 0) as int,
-    );
-  }
-}

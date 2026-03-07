@@ -3,14 +3,61 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
+import '../models/fitness_log_model.dart';
+import '../models/analytics_model.dart';
 import '../services/api_service.dart';
 
 class MemberProvider extends ChangeNotifier {
   UserModel? userData;
   List<TaskModel> tasks = [];
   Map<String, int> activity = {};
+  List<OneRepMaxLog> strengthLogs = [];
   bool isLoading = false;
   String? error;
+
+  Future<void> fetchStrengthLogs() async {
+    try {
+      final data = await ApiService.get('/member/health/strength');
+      if (data['success'] == true) {
+        strengthLogs = (data['data'] as List)
+            .map((l) => OneRepMaxLog.fromJson(l))
+            .toList();
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<MemberAnalytics?> fetchAnalytics() async {
+    try {
+      final data = await ApiService.get('/member/analytics');
+      if (data['success'] == true) {
+        return MemberAnalytics.fromJson(data['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> addStrengthLog(OneRepMaxLog log) async {
+    // Optimistic update
+    strengthLogs.insert(0, log);
+    notifyListeners();
+
+    try {
+      final data = await ApiService.post('/member/health/strength', {
+        'exerciseName': log.exerciseName,
+        'weight': log.weight,
+        'date': log.date.toIso8601String(),
+      });
+      if (data['success'] != true) {
+        // Revert on failure
+        strengthLogs.remove(log);
+        notifyListeners();
+      }
+    } catch (_) {
+      strengthLogs.remove(log);
+      notifyListeners();
+    }
+  }
 
   Future<void> fetchDashboard({int? year}) async {
     final y = year ?? DateTime.now().year;
@@ -110,6 +157,9 @@ class MemberProvider extends ChangeNotifier {
             age: userData!.age,
             gender: userData!.gender,
             activityLevel: userData!.activityLevel,
+            bodyFatPercentage: userData!.bodyFatPercentage,
+            muscleMass: userData!.muscleMass,
+            dailyWaterGoal: userData!.dailyWaterGoal,
           );
         }
         notifyListeners();

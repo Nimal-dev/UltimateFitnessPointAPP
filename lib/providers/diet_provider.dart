@@ -58,7 +58,14 @@ class DietProvider extends ChangeNotifier {
 
   Future<void> setWater(int amount) async {
     if (log == null) return;
-    log!.waterIntake = amount;
+    
+    // Toggle logic: if clicking the current amount, decrement (deselect)
+    if (amount == log!.waterIntake) {
+      log!.waterIntake = amount - 1;
+    } else {
+      log!.waterIntake = amount;
+    }
+    
     notifyListeners();
     await _syncLog();
   }

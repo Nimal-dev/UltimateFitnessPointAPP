@@ -3,8 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/diet_provider.dart';
 import '../../models/user_model.dart';
+import '../../models/member_model.dart';
 import '../../theme/app_theme.dart';
+import '../shared/member_analytics_screen.dart';
 import 'membership_renewal_screen.dart';
 import 'profile_screen.dart';
 
@@ -23,6 +26,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MemberProvider>().fetchDashboard(year: _selectedYear);
+      context.read<DietProvider>().fetchDietData();
     });
   }
 
@@ -40,8 +44,10 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
           : RefreshIndicator(
               color: AppTheme.accent,
               backgroundColor: AppTheme.cardBackground,
-              onRefresh: () =>
-                  provider.fetchDashboard(year: _selectedYear),
+              onRefresh: () => Future.wait([
+                context.read<MemberProvider>().fetchDashboard(year: _selectedYear),
+                context.read<DietProvider>().fetchDietData(),
+              ]),
               child: CustomScrollView(
                 slivers: [
                   SliverAppBar(
@@ -146,6 +152,57 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                           _BmiCard(user: displayUser!, onInfoTap: _showHealthInfoModal),
                           const SizedBox(height: 16),
                           _MetabolicCard(user: displayUser, onInfoTap: _showHealthInfoModal),
+                          const SizedBox(height: 16),
+                          
+                          // Performance Analytics Button
+                          Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppTheme.accent,
+                                  AppTheme.accent.withOpacity(0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.accent.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () => _goToAnalytics(displayUser!),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.analytics_rounded, color: Colors.black, size: 24),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        "VIEW FULL PERFORMANCE",
+                                        style: GoogleFonts.inter(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.black, size: 16),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 28),
                         ],
 
@@ -375,6 +432,26 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[now.month - 1]} ${now.day}, ${now.year}';
+  }
+
+  void _goToAnalytics(UserModel user) {
+    final member = MemberModel(
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile ?? '',
+      status: user.membershipStatus,
+      points: user.points,
+      joined: '', // Not strictly needed for member self-view
+      expiryDate: user.membershipExpiry?.toIso8601String() ?? '',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MemberAnalyticsScreen(member: member),
+      ),
+    );
   }
 }
 

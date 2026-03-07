@@ -123,3 +123,107 @@ class WorkoutTrendPoint {
     );
   }
 }
+
+class OwnerMetrics {
+  final int totalMembers;
+  final int activeMembers;
+  final int pendingRenewals;
+  final int expiredMembers;
+  final int dailyCheckins;
+  final List<RevenueProjection> revenueProjections;
+  final List<AtRiskMember> atRiskMembers;
+  final List<PeakHour> peakHours;
+
+  OwnerMetrics({
+    this.totalMembers = 0,
+    this.activeMembers = 0,
+    this.pendingRenewals = 0,
+    this.expiredMembers = 0,
+    this.dailyCheckins = 0,
+    this.revenueProjections = const [],
+    this.atRiskMembers = const [],
+    this.peakHours = const [],
+  });
+
+  factory OwnerMetrics.fromJson(Map<String, dynamic> json) {
+    return OwnerMetrics(
+      totalMembers: json['totalMembers'] ?? 0,
+      activeMembers: json['activeMembers'] ?? 0,
+      pendingRenewals: json['pendingRenewals'] ?? 0,
+      expiredMembers: json['expiredMembers'] ?? 0,
+      dailyCheckins: json['dailyCheckins'] ?? 0,
+      revenueProjections: (json['revenueProjections'] as List? ?? [])
+          .map((i) => RevenueProjection.fromJson(i))
+          .toList(),
+      atRiskMembers: (json['atRiskMembers'] as List? ?? [])
+          .map((i) => AtRiskMember.fromJson(i))
+          .toList(),
+      peakHours: (json['peakHours'] as List? ?? [])
+          .map((i) => PeakHour.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+class RevenueProjection {
+  final int month;
+  final int year;
+  final int count;
+  final double projectedRevenue;
+
+  RevenueProjection({
+    required this.month,
+    required this.year,
+    required this.count,
+    required this.projectedRevenue,
+  });
+
+  factory RevenueProjection.fromJson(Map<String, dynamic> json) {
+    final id = json['_id'] ?? {};
+    return RevenueProjection(
+      month: id['month'] ?? 0,
+      year: id['year'] ?? 0,
+      count: json['count'] ?? 0,
+      projectedRevenue: (json['projectedRevenue'] ?? 0.0).toDouble(),
+    );
+  }
+}
+
+class AtRiskMember {
+  final String id;
+  final String name;
+  final String mobile;
+  final DateTime? lastCheckin;
+
+  AtRiskMember({
+    required this.id,
+    required this.name,
+    required this.mobile,
+    this.lastCheckin,
+  });
+
+  factory AtRiskMember.fromJson(Map<String, dynamic> json) {
+    return AtRiskMember(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? 'Unknown',
+      mobile: json['mobile'] ?? '',
+      lastCheckin: json['lastCheckin'] != null 
+          ? DateTime.parse(json['lastCheckin']) 
+          : null,
+    );
+  }
+}
+
+class PeakHour {
+  final int hour;
+  final int count;
+
+  PeakHour({required this.hour, required this.count});
+
+  factory PeakHour.fromJson(Map<String, dynamic> json) {
+    return PeakHour(
+      hour: json['_id'] ?? 0,
+      count: json['count'] ?? 0,
+    );
+  }
+}
