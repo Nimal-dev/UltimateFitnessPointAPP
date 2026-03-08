@@ -84,6 +84,48 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Register a new member.
+  Future<bool> signUp({
+    required String name,
+    required String email,
+    required String mobile,
+    required String mpin,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final data = await ApiService.post('/auth/register', {
+        'name': name,
+        'email': email,
+        'mobile': mobile,
+        'mpin': mpin,
+      });
+
+      if (data['success'] == true) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data['message'] ?? 'Registration failed';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Whoops, registration failed! Check your connection.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Calls [PATCH /api/auth/reset-mpin] to change the user's MPIN.
   /// On success, clears the [needsMpinReset] flag and grants access to Home.
   Future<bool> resetMpin(String newMpin) async {

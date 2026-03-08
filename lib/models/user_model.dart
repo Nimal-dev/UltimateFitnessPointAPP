@@ -17,6 +17,7 @@ class UserModel {
   final double? bodyFatPercentage;
   final double? muscleMass;
   final int dailyWaterGoal;
+  final String? planName;
 
   UserModel({
     required this.id,
@@ -35,6 +36,7 @@ class UserModel {
     this.bodyFatPercentage,
     this.muscleMass,
     this.dailyWaterGoal = 8,
+    this.planName,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,7 @@ class UserModel {
           ? (json['muscleMass'] as num).toDouble()
           : null,
       dailyWaterGoal: (json['dailyWaterGoal'] ?? 8) as int,
+      planName: json['planName'] as String?,
     );
   }
 
@@ -80,6 +83,7 @@ class UserModel {
     double? bodyFatPercentage,
     double? muscleMass,
     int? dailyWaterGoal,
+    String? planName,
   }) {
     return UserModel(
       id: id,
@@ -98,6 +102,7 @@ class UserModel {
       bodyFatPercentage: bodyFatPercentage ?? this.bodyFatPercentage,
       muscleMass: muscleMass ?? this.muscleMass,
       dailyWaterGoal: dailyWaterGoal ?? this.dailyWaterGoal,
+      planName: planName ?? this.planName,
     );
   }
 
@@ -119,6 +124,7 @@ class UserModel {
       'bodyFatPercentage': bodyFatPercentage,
       'muscleMass': muscleMass,
       'dailyWaterGoal': dailyWaterGoal,
+      'planName': planName,
     };
   }
 
@@ -129,7 +135,13 @@ class UserModel {
 
   int get daysRemaining {
     if (membershipExpiry == null) return 0;
-    final diff = membershipExpiry!.difference(DateTime.now()).inDays;
+    
+    // Calculate difference by normalizing both to midnight
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final expiry = DateTime(membershipExpiry!.year, membershipExpiry!.month, membershipExpiry!.day);
+    
+    final diff = expiry.difference(today).inDays;
     return diff < 0 ? 0 : diff;
   }
 

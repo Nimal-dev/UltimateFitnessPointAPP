@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/snackbar_utils.dart';
+import 'signup_screen.dart';
 
 enum _LoginStep { mobile, mpin }
 
@@ -188,9 +189,32 @@ class _MobileStep extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           Center(
-            child: Text('Don\'t have an account? Contact your gym owner.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Don\'t have an account? ',
+                    style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SignupScreen()),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text('REGISTER NOW',
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.accent,
+                          letterSpacing: 1)),
+                ),
+              ],
+            ),
           ),
         ],
       ),

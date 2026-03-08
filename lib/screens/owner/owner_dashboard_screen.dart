@@ -734,7 +734,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 }
 
 class _PaymentRequestRow extends StatelessWidget {
-  final dynamic payment;
+  final PaymentRequest payment;
   const _PaymentRequestRow({required this.payment});
 
   @override
@@ -749,8 +749,8 @@ class _PaymentRequestRow extends StatelessWidget {
         decoration: BoxDecoration(color: AppTheme.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
         child: const Icon(Icons.payment_rounded, color: AppTheme.amber, size: 20),
       ),
-      title: Text(payment['userName'] ?? 'Member', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-      subtitle: Text('₹${payment['amount']}', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+      title: Text(payment.memberName, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+      subtitle: Text('₹${payment.amount}', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
       trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted),
     );
   }

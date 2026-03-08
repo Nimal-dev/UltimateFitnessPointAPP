@@ -12,6 +12,7 @@ import 'providers/payment_provider.dart';
 import 'providers/owner_provider.dart';
 import 'services/api_service.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'screens/login_screen.dart';
 import 'screens/shared/force_mpin_reset_screen.dart';
 import 'screens/member/member_dashboard_screen.dart';
@@ -25,7 +26,8 @@ import 'screens/trainer/trainer_clients_screen.dart';
 import 'screens/shared/splash_screen.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   
   // Start 14-minute self-ping to keep Render free tier alive
   Timer.periodic(const Duration(minutes: 14), (_) => ApiService.ping());

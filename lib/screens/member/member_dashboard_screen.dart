@@ -676,7 +676,7 @@ class _MembershipRingCardState extends State<_MembershipRingCard>
           ),
           const SizedBox(height: 2),
           Text(
-            widget.status == 'Active' ? 'Premium' : widget.status,
+            widget.status == 'Active' ? (context.read<MemberProvider>().userData?.planName ?? 'Premium') : widget.status,
             style: GoogleFonts.inter(
               fontSize: 10,
               color: AppTheme.accent,

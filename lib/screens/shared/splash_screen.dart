@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../../theme/app_theme.dart';
 
 class AnimatedSplashScreen extends StatefulWidget {
@@ -33,6 +34,10 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 
   Future<void> _startAnimation() async {
     _ctrl.forward();
+    // Allow animation to start drawing before removing native splash
+    Future.delayed(const Duration(milliseconds: 100), () {
+      FlutterNativeSplash.remove();
+    });
     await Future.delayed(const Duration(milliseconds: 2500));
     widget.onFinish();
   }
