@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -235,6 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     keyboardType: isNumber || isMpin ? TextInputType.number : TextInputType.text,
     maxLength: isMpin ? 4 : null,
     obscureText: isMpin,
+    onChanged: isMpin ? (_) => HapticFeedback.vibrate() : null,
     style: const TextStyle(color: Colors.white, fontSize: 14),
     decoration: InputDecoration(
       hintText: hint,

@@ -448,9 +448,11 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _ActivityHeatmap(
-                          activity: provider.activity,
-                          year: _selectedYear,
+                        RepaintBoundary(
+                          child: _ActivityHeatmap(
+                            activity: provider.activity,
+                            year: _selectedYear,
+                          ),
                         ),
                         const SizedBox(height: 20),
                       ]),
@@ -1497,12 +1499,13 @@ class _WeightProgressSection extends StatelessWidget {
                       ],
                     ),
                   )
-                : LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: false),
-                      titlesData: FlTitlesData(
-                        show: true,
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                : RepaintBoundary(
+                    child: LineChart(
+                      LineChartData(
+                        gridData: const FlGridData(show: false),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         bottomTitles: AxisTitles(
@@ -1569,6 +1572,7 @@ class _WeightProgressSection extends StatelessWidget {
                       ),
                     ),
                   ),
+          ),
           ),
         ],
       ),

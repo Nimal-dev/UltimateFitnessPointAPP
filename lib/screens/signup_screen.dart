@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -150,6 +151,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 maxLength: 4,
+                onChanged: (_) => HapticFeedback.vibrate(),
                 style: GoogleFonts.inter(color: Colors.white, letterSpacing: 8, fontWeight: FontWeight.bold),
                 decoration: _inputDecoration('••••', Icons.lock_outline_rounded).copyWith(counterText: ''),
                 validator: (val) {

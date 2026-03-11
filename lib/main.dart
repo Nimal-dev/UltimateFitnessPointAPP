@@ -13,6 +13,9 @@ import 'providers/owner_provider.dart';
 import 'services/api_service.dart';
 
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'dart:io' show Platform;
+
 import 'screens/login_screen.dart';
 import 'screens/shared/force_mpin_reset_screen.dart';
 import 'screens/member/member_dashboard_screen.dart';
@@ -25,12 +28,21 @@ import 'screens/trainer/trainer_dashboard_screen.dart';
 import 'screens/trainer/trainer_clients_screen.dart';
 import 'screens/shared/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   
   // Start 14-minute self-ping to keep Render free tier alive
   Timer.periodic(const Duration(minutes: 14), (_) => ApiService.ping());
+  
+  // Set high refresh rate for smooth scrolling on Android
+  if (Platform.isAndroid) {
+    try {
+      await FlutterDisplayMode.setHighRefreshRate();
+    } catch (_) {
+      // Ignore if not supported
+    }
+  }
   
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

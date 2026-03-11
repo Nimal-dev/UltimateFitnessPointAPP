@@ -15,6 +15,7 @@ class Exercise {
   final String gifUrl; // Looping animation URL (GIF via cached_network_image)
   final String muscleGroup;
   final String instructions;
+  final BoxFit fit;
 
   const Exercise({
     required this.name,
@@ -24,6 +25,7 @@ class Exercise {
     required this.gifUrl,
     required this.muscleGroup,
     required this.instructions,
+    this.fit = BoxFit.cover,
   });
 }
 
@@ -54,7 +56,7 @@ const _warmupExercises = [
     reps: '30',
     duration: '3 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExemkwZWxsZmNwanQ4Z3N2MW5wMzNnbm16bnJuN3hhY3hxbXNzNTZmNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oEjHSkxqdKLm3kPSM/giphy.gif',
+        'assets/animations/jumpingjacks.gif',
     muscleGroup: 'Full Body',
     instructions: 'Start with feet together. Jump while spreading arms and legs wide. Return to start. Keep a steady rhythm.',
   ),
@@ -64,7 +66,7 @@ const _warmupExercises = [
     reps: '20',
     duration: '2 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeTU5djZ6dWd5aGoxZjBtOGVhbmc1aDFkNmMyYzF3Nmk5czJmeXIwNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlNQ03J5JxX6lva/giphy.gif',
+        'assets/animations/armcircles.gif',
     muscleGroup: 'Shoulders',
     instructions: 'Extend arms. Make 10 forward circles, then 10 backward. Keep arms straight.',
   ),
@@ -74,7 +76,7 @@ const _warmupExercises = [
     reps: '40',
     duration: '3 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnh2ZW1sMGhzemhxaXBxOXM3bnZ6dHlka295MWRzcHZuM2xyajJhNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26HiBuIBhq4prCyCY/giphy.gif',
+        'assets/animations/highknees.gif',
     muscleGroup: 'Core & Legs',
     instructions: 'Run in place, pulling knees up to hip height. Keep core tight and pump your arms.',
   ),
@@ -87,7 +89,7 @@ const _workoutExercises = [
     reps: '15',
     duration: '8 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHB0Z2lmMjFheTl0ZTRheHFzeGcwcjU4dGZvdXhzeXFnNXpsbjl5aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5t9IfzEhO8EBq/giphy.gif',
+        'assets/animations/pushup.gif',
     muscleGroup: 'Chest & Triceps',
     instructions: 'Keep body straight, lower chest to floor. Drive through palms back to start. No sagging hips!',
   ),
@@ -97,19 +99,19 @@ const _workoutExercises = [
     reps: '12',
     duration: '10 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjd2Z2JseHRhbW8weTFtcHZnNHNrMzl0MjQ2Z2l6bjdkczhhOW00YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f2iPMZBHm4SzxqGnQZ/giphy.gif',
+        'assets/animations/squats.gif',
     muscleGroup: 'Quads & Glutes',
     instructions: 'Feet shoulder-width apart. Push hips back and down, keep chest up. Drive through heels to stand.',
   ),
   Exercise(
-    name: 'Dumbbell Rows',
+    name: 'One hand bench Dumbbell Rows',
     sets: '3',
     reps: '12',
     duration: '9 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOTBuZXp5a3oxNzVmc2dlM2M5ZDh6b215NWZhbzl3ZGY4dWJlamlyNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/RH1IFq2GT0Oqm/giphy.gif',
+        'assets/animations/onehanddumbbellrow.gif',
     muscleGroup: 'Back & Biceps',
-    instructions: 'Hinge at hip, back flat. Row dumbbell to hip, squeezing shoulder blade. Lower with control.',
+    instructions: 'Place knee and hand on bench, back flat. Row dumbbell to hip, squeezing shoulder blade. Lower with control.',
   ),
   Exercise(
     name: 'Plank',
@@ -130,7 +132,7 @@ const _cooldownExercises = [
     reps: '1',
     duration: '2 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaHR0bjF5dTRhNXZseXBpbThmZHNlbml1cjV6cjE3ZTFpbmpmMGptaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UPBBrXjbhRBrmgpzqj/giphy.gif',
+        'assets/animations/Childspose.gif',
     muscleGroup: 'Back & Hips',
     instructions: 'Kneel, sit back on heels, reach arms forward on floor. Breathe deeply and hold 60–90s.',
   ),
@@ -140,9 +142,10 @@ const _cooldownExercises = [
     reps: '1',
     duration: '2 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzNldjh3ZGV0ZHN6aHppcXVzY3d4dHJwbGt0enByZXM2Ynoxd3VkbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/7TcdtHOCxo3meUvPgj/giphy.gif',
+        'assets/animations/standingquadstretch.gif',
     muscleGroup: 'Quads',
     instructions: 'Stand on one foot, pull other heel to glutes. Keep knees together. Hold 30s each side.',
+    fit: BoxFit.contain,
   ),
   Exercise(
     name: 'Seated Hamstring Stretch',
@@ -150,7 +153,7 @@ const _cooldownExercises = [
     reps: '1',
     duration: '2 min',
     gifUrl:
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExamlnNjBtd3ptanY4bHpldjF1OWo3Y3Z3dWVlMWVraWVhMXJmeTAxNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3ohhwJbJPDAXFZHNNS/giphy.gif',
+        'assets/animations/seatedhamstringstretch.gif',
     muscleGroup: 'Hamstrings',
     instructions: 'Sit with legs extended, hinge forward at hips. Reach for feet. Keep back flat. Hold 30s each side.',
   ),
@@ -536,15 +539,16 @@ class _ExerciseCardWidgetState extends State<ExerciseCardWidget> {
           ),
 
           // ── Expanded Details ─────────────────────────────────────────────
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: _ExerciseDetails(
-              exercise: widget.exercise,
-              phaseColor: widget.phaseColor,
-            ),
-            crossFadeState:
-                _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          AnimatedSize(
             duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _expanded
+                ? _ExerciseDetails(
+                    exercise: widget.exercise,
+                    phaseColor: widget.phaseColor,
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),
@@ -575,47 +579,69 @@ class _ExerciseDetails extends StatelessWidget {
           child: SizedBox(
             height: 200,
             width: double.infinity,
-            child: CachedNetworkImage(
-              imageUrl: exercise.gifUrl,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: AppTheme.cardBackground,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: phaseColor),
+            child: exercise.gifUrl.startsWith('http')
+                ? CachedNetworkImage(
+                    imageUrl: exercise.gifUrl,
+                    fit: exercise.fit,
+                    placeholder: (context, url) => Container(
+                      color: AppTheme.cardBackground,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: phaseColor),
+                            ),
+                            const SizedBox(height: 12),
+                            Text('Loading tutorial...',
+                                style: GoogleFonts.inter(
+                                    fontSize: 11, color: AppTheme.textMuted)),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Text('Loading tutorial...',
-                          style: GoogleFonts.inter(
-                              fontSize: 11, color: AppTheme.textMuted)),
-                    ],
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 200,
+                      color: AppTheme.cardBackground,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.fitness_center_rounded,
+                                color: phaseColor, size: 48),
+                            const SizedBox(height: 8),
+                            Text('Animation unavailable',
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: AppTheme.textMuted)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                : Image.asset(
+                    exercise.gifUrl,
+                    fit: exercise.fit,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 200,
+                      color: AppTheme.cardBackground,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.fitness_center_rounded,
+                                color: phaseColor, size: 48),
+                            const SizedBox(height: 8),
+                            Text('Animation unavailable',
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: AppTheme.textMuted)),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              errorWidget: (context, url, error) => Container(
-                height: 200,
-                color: AppTheme.cardBackground,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.fitness_center_rounded,
-                          color: phaseColor, size: 48),
-                      const SizedBox(height: 8),
-                      Text('Animation unavailable',
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: AppTheme.textMuted)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
 
